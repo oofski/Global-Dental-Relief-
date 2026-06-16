@@ -21,7 +21,16 @@ try { bootConfig = ipcRenderer.sendSync('config:get-sync') || bootConfig; } catc
 contextBridge.exposeInMainWorld('api', {
   bootConfig,
   auth: {
-    login: (role, pin) => invoke('auth:login', { role, pin })
+    login: (username, password) => invoke('auth:login', { username, password }),
+    logout: () => invoke('auth:logout')
+  },
+  users: {
+    roles: () => invoke('users:roles'),
+    list: () => invoke('users:list'),
+    create: (payload) => invoke('users:create', payload),
+    update: (id, changes) => invoke('users:update', { id, changes }),
+    changePassword: (id, password) => invoke('users:changePassword', { id, password }),
+    remove: (id) => invoke('users:remove', id)
   },
   config: {
     get: () => invoke('config:get')

@@ -15,6 +15,7 @@
     "pack": "electron-builder --dir"
   },
   "dependencies": {
+    "electron-updater": "^6.3.9",
     "exceljs": "^4.4.0"
   },
   "devDependencies": {
@@ -29,6 +30,14 @@
       "output": "release",
       "buildResources": "assets"
     },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "oofski",
+        "repo": "Global-Dental-Relief-",
+        "releaseType": "release"
+      }
+    ],
     "files": [
       "src/**/*",
       "assets/icon.*",

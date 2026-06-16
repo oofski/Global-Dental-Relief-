@@ -20,6 +20,7 @@ process.env.GDR_TEST_DIR = TEST_DIR;
 const db = require('../src/main/db');
 const drive = require('../src/main/drive');
 const reports = require('../src/main/reports');
+const users = require('../src/main/users');
 const model = require('../src/shared/model');
 const codes = require('../src/shared/codes');
 const checksum = require('../src/shared/checksum');
@@ -152,6 +153,23 @@ function ok(name) { pass++; console.log('  ✓', name); }
   assert.strictEqual(imp.ok, true);
   assert.ok(imp.total >= 1);
   ok('master DB export/import round-trips (8.3)');
+
+  // 12. User accounts (username + password login + admin portal)
+  users._reset();
+  assert.strictEqual(users.authenticate('admin', 'welcome123').ok, true, 'admin/welcome123 logs in');
+  assert.strictEqual(users.authenticate('admin', 'welcome123').user.role, 'admin');
+  assert.strictEqual(users.authenticate('doctor', 'welcome123').user.role, 'dentist');
+  assert.strictEqual(users.authenticate('hygienist', 'welcome123').user.role, 'cleaning');
+  assert.strictEqual(users.authenticate('admin', 'wrong').ok, false, 'wrong password rejected');
+  const created = users.create({ username: 'drnew', password: 'welcome123', role: 'dentist', display_name: 'Dr New' });
+  assert.strictEqual(created.ok, true, 'create account');
+  assert.strictEqual(users.create({ username: 'drnew', password: 'welcome123', role: 'dentist' }).error, 'username_taken');
+  assert.strictEqual(users.changePassword(created.user.id, 'newpass1').ok, true, 'change password');
+  assert.strictEqual(users.authenticate('drnew', 'newpass1').ok, true, 'login with new password');
+  assert.strictEqual(users.authenticate('drnew', 'welcome123').ok, false, 'old password no longer works');
+  const adminUser = users.list().find((u) => u.role === 'admin');
+  assert.strictEqual(users.remove(adminUser.id).error, 'last_admin', 'cannot remove last admin');
+  ok('user accounts: login, create, change password, last-admin guard');
 
   console.log(`\nAll ${pass} checks passed ✅`);
   console.log('Data dir:', require('../src/main/paths').base());

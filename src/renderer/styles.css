@@ -62,6 +62,25 @@ code{font-family:'Cascadia Code',Consolas,monospace;font-size:.85em;word-break:b
 .pin-input{font-size:24px;letter-spacing:6px;text-align:center;padding:10px 14px;border:2px solid var(--line);border-radius:10px;width:160px}
 .pin-input:focus{outline:none;border-color:var(--teal)}
 
+/* username/password login */
+.login-field{text-align:left;margin-bottom:12px}
+.login-input{font-size:16px;padding:12px 14px}
+.pw-row{display:flex;gap:8px;align-items:stretch}
+.pw-row .text-input{flex:1}
+.pw-toggle{border:2px solid var(--line);background:#f3f8f8;border-radius:9px;padding:0 14px;font-weight:600;color:var(--teal-dark);cursor:pointer;font-size:13px;white-space:nowrap}
+.pw-toggle:hover{background:#e7f1f2}
+.login-error{color:var(--red);font-size:14px;min-height:20px;margin:4px 0 8px;text-align:left;font-weight:600}
+.login-btn{width:100%;justify-content:center}
+
+/* header user chip */
+.user-chip{display:flex;flex-direction:column;align-items:flex-end;line-height:1.2;margin-right:4px}
+.user-name{font-weight:700;font-size:14px}
+
+/* accounts table */
+.accounts-table td,.accounts-table th{vertical-align:middle}
+.acct-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.row-inactive{opacity:.55}
+
 /* ---- Cards / views ---- */
 .view{animation:fade .15s ease}
 @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}

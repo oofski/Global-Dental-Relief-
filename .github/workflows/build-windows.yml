@@ -1,8 +1,9 @@
 name: Build Windows Installer
 
-# Produces the real Windows installer (.exe) on a Windows runner — no Wine
-# needed there. Download it from the run's "Artifacts", or from the
-# auto-published "latest-windows" pre-release.
+# Builds the Windows installer (.exe) on a Windows runner (no Wine needed there)
+# and PUBLISHES it to a GitHub Release as v<version>, including the latest.yml
+# update manifest + blockmaps that the in-app auto-updater (electron-updater)
+# reads. Bump "version" in package.json to ship an update to installed apps.
 
 on:
   push:
@@ -35,15 +36,17 @@ jobs:
       - name: Run smoke tests
         run: npm run smoke
 
-      - name: Build installer + portable
-        run: npm run dist
+      # Build + publish to a GitHub Release (v<version>) so the auto-updater can
+      # find latest.yml. electron-builder reuses an existing release for the same
+      # version (assets are overwritten); bump the version for a real update.
+      - name: Build & publish installer
+        run: npx electron-builder --win --x64 --publish always
         env:
-          # electron-builder publishing is handled by the release step below.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: List build output
         shell: bash
-        run: ls -lh release/*.exe
+        run: ls -lh release/*.exe release/*.yml || true
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
@@ -51,19 +54,6 @@ jobs:
           name: GDR-Clinic-Windows
           path: |
             release/*.exe
+            release/latest.yml
           retention-days: 90
           if-no-files-found: error
-
-      - name: Publish "latest-windows" pre-release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: latest-windows
-          name: GDR Clinic — Latest Windows Build
-          prerelease: true
-          body: |
-            Automated Windows build of GDR Clínica (Software Smiles).
-            Download **GDR-Clinic-Setup-*.exe** (installer) or
-            **GDR-Clinic-Portable-*.exe** (no install) below.
-          files: release/*.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

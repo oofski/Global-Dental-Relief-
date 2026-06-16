@@ -3,12 +3,10 @@ const fs = require('fs');
 const paths = require('./paths');
 
 /*
- * Station role config and clinic settings (spec 3.1 / 11.4).
+ * Clinic settings and language configuration.
  *
- * Roles use simple, memorable PINs suitable for a fast-paced clinic with
- * rotating volunteers (spec 3.1 note). PINs are stored in config.json on the
- * local machine and can be changed there. Defaults below are intentionally
- * simple and documented in the README.
+ * User accounts / authentication live in users.js (username + password).
+ * This file holds non-secret clinic settings only.
  */
 
 const DEFAULT_CONFIG = {
@@ -21,18 +19,9 @@ const DEFAULT_CONFIG = {
   //  - ui_language: the application interface language ('en' | 'es').
   //  - report_language: language for GENERATED reports/exports ('es' | 'en').
   //  - consent_language: the patient consent form language (Spanish for Mexico).
-  // Spec change: UI in English, consent + reports in Spanish (configurable).
   ui_language: 'en',
   report_language: 'es',
-  consent_language: 'es',
-  // Default station PINs (change in config.json on each laptop).
-  roles: {
-    check_in: { pin: '1111', access: 'station' },
-    dentist: { pin: '2222', access: 'station' },
-    cleaning: { pin: '3333', access: 'station' },
-    fluoride: { pin: '4444', access: 'station' },
-    checkout: { pin: '0000', access: 'admin' }
-  }
+  consent_language: 'es'
 };
 
 let cache = null;
@@ -63,11 +52,6 @@ function mergeDefaults(c) {
   if (c.ui_language) out.ui_language = c.ui_language;
   if (c.report_language) out.report_language = c.report_language;
   if (c.consent_language) out.consent_language = c.consent_language;
-  if (c.roles && typeof c.roles === 'object') {
-    for (const k of Object.keys(out.roles)) {
-      if (c.roles[k] && c.roles[k].pin != null) out.roles[k].pin = String(c.roles[k].pin);
-    }
-  }
   return out;
 }
 
@@ -77,12 +61,4 @@ function save(c) {
   cache = c;
 }
 
-function authenticate(role, pin) {
-  const c = load();
-  const r = c.roles[role];
-  if (!r) return { ok: false };
-  if (String(pin) !== String(r.pin)) return { ok: false };
-  return { ok: true, role, access: r.access };
-}
-
-module.exports = { load, save, authenticate, DEFAULT_CONFIG };
+module.exports = { load, save, DEFAULT_CONFIG };

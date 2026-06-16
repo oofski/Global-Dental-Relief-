@@ -27,8 +27,10 @@ with the GDR icon, let GitHub build it on a Windows runner:
 
 - Push to the `claude/confident-mayer-x9cxvu` branch (or run the
   **Build Windows Installer** workflow manually under the repo's *Actions* tab).
-- Download **`GDR-Clinic-Setup-<version>.exe`** from the run's **Artifacts**, or
-  from the auto-published **`latest-windows`** pre-release.
+- CI publishes a **`v<version>`** GitHub Release with `GDR-Clinic-Setup-<version>.exe`
+  (installer), the portable `.exe`, and `latest.yml` (the auto-update manifest).
+  Download from the repo's **Releases** page, or from the run's **Artifacts**.
+- Installs of this build then **auto-update** to future releases (see below).
 
 ### Option C — Build it yourself (on a Windows PC)
 ```bash
@@ -40,18 +42,36 @@ npm run dist
 
 ---
 
-## Logging in (default station PINs)
+## Logging in — username + password
 
-| Station | Role | PIN |
+Accounts replace PINs. Every seeded account's password is **`welcome123`** (with a
+show/hide toggle on the login screen). Sign in as the **admin** account to open the
+**Admin portal** (Accounts tab) and create accounts, change roles, or change
+passwords.
+
+| Username | Role | Default password |
 |---|---|---|
-| Recepción / Registro | `check_in` | `1111` |
-| Dentista (Silla ×7) | `dentist` | `2222` |
-| Limpieza | `cleaning` | `3333` |
-| Flúor | `fluoride` | `4444` |
-| Salida / Maestro (Admin) | `checkout` | `0000` |
+| `admin` | Administrator (admin portal + checkout + reports) | `welcome123` |
+| `frontdesk` | Check-In / Registration | `welcome123` |
+| `doctor` | Dentist (Chair ×7) | `welcome123` |
+| `hygienist` | Cleaning | `welcome123` |
+| `fluoride` | Fluoride | `welcome123` |
+| `checkout` | Checkout / Master | `welcome123` |
 
-Change PINs (and patient-number start, clinic name) in `config.json`, created on
-first run at `%APPDATA%\gdr-clinic\config.json`.
+Passwords are salted + hashed (scrypt) in `users.json` (in `%APPDATA%\gdr-clinic\`),
+never stored in plain text. The admin portal lets you create more accounts of any
+role and reset any password. Clinic/language settings live in `config.json` (same
+folder).
+
+## Auto-updates
+
+The installed app checks this repo's **GitHub Releases** on launch (and every 6h),
+downloads a newer version in the background, and prompts to restart. To ship an
+update: bump `version` in `package.json` and push — CI publishes a new
+`v<version>` release with the `latest.yml` manifest the updater reads.
+
+> Auto-update needs the repo to be **public** (or a token configured). It applies
+> to the **installed** app only — the portable build does not self-update.
 
 ---
 

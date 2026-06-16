@@ -1,62 +1,68 @@
-/* Station login (spec 3.1) — pick a role, enter PIN. */
+/* Username + password login (replaces station PINs). */
 import { h, mount, toast } from '../util.js';
 import { T } from '../i18n/index.js';
 
-const ROLES = [
-  { key: 'check_in', label: T.role_check_in, icon: '📝' },
-  { key: 'dentist', label: T.role_dentist, icon: '🦷' },
-  { key: 'cleaning', label: T.role_cleaning, icon: '🪥' },
-  { key: 'fluoride', label: T.role_fluoride, icon: '💧' },
-  { key: 'checkout', label: T.role_checkout, icon: '✅' }
-];
-
 export function renderLogin({ config, onLogin }) {
   const wrap = h('div', { class: 'login-wrap' });
-  let selected = null;
 
-  const pinInput = h('input', {
-    class: 'pin-input', type: 'password', inputmode: 'numeric',
-    autocomplete: 'off', placeholder: '••••', maxlength: '12'
+  const userInput = h('input', {
+    class: 'text-input login-input', type: 'text', autocomplete: 'username',
+    placeholder: T.username, autocapitalize: 'none', spellcheck: 'false'
+  });
+  const passInput = h('input', {
+    class: 'text-input login-input', type: 'password', autocomplete: 'current-password',
+    placeholder: T.password
   });
 
+  // Show / hide password toggle.
+  let shown = false;
+  const toggleBtn = h('button', { class: 'pw-toggle', type: 'button' }, T.show);
+  toggleBtn.addEventListener('click', () => {
+    shown = !shown;
+    passInput.type = shown ? 'text' : 'password';
+    toggleBtn.textContent = shown ? T.hide : T.show;
+    passInput.focus();
+  });
+
+  const errorEl = h('div', { class: 'login-error' });
+
   async function attempt() {
-    if (!selected) { toast(T.login_subtitle, 'warn'); return; }
-    const res = await window.api.auth.login(selected, pinInput.value);
-    if (res && res.ok) onLogin(res.role, res.access);
-    else { toast(T.bad_pin, 'error'); pinInput.value = ''; pinInput.focus(); }
+    errorEl.textContent = '';
+    const username = userInput.value.trim();
+    const password = passInput.value;
+    if (!username || !password) { errorEl.textContent = T.bad_credentials; return; }
+    const res = await window.api.auth.login(username, password);
+    if (res && res.ok && res.user) {
+      onLogin(res.user);
+    } else {
+      errorEl.textContent = T.bad_credentials;
+      passInput.value = '';
+      passInput.focus();
+    }
   }
 
-  pinInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') attempt(); });
-
-  const roleGrid = h('div', { class: 'role-grid' }, ROLES.map((r) =>
-    h('button', {
-      class: 'role-tile', type: 'button',
-      onClick: (e) => {
-        selected = r.key;
-        [...roleGrid.children].forEach((c) => c.classList.remove('active'));
-        e.currentTarget.classList.add('active');
-        pinInput.focus();
-      }
-    }, [
-      h('span', { class: 'role-icon', text: r.icon }),
-      h('span', { class: 'role-name', text: r.label })
-    ])
-  ));
+  userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') passInput.focus(); });
+  passInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') attempt(); });
 
   mount(wrap,
     h('div', { class: 'login-card' }, [
       h('img', { class: 'login-logo', src: '../../assets/icon.png', alt: '' }),
       h('h1', { class: 'login-title', text: config.clinic_name || T.app_title }),
       h('div', { class: 'login-sub', text: T.by }),
-      h('h2', { class: 'login-h2', text: T.login_title }),
-      h('div', { class: 'login-hint', text: T.login_subtitle }),
-      roleGrid,
-      h('div', { class: 'pin-row' }, [
-        h('label', { class: 'field-label', text: T.pin }),
-        pinInput,
-        h('button', { class: 'btn btn-primary', onClick: attempt }, T.enter)
-      ])
+      h('h2', { class: 'login-h2', text: T.login_welcome }),
+      h('div', { class: 'field login-field' }, [
+        h('label', { class: 'field-label', text: T.username }),
+        userInput
+      ]),
+      h('div', { class: 'field login-field' }, [
+        h('label', { class: 'field-label', text: T.password }),
+        h('div', { class: 'pw-row' }, [passInput, toggleBtn])
+      ]),
+      errorEl,
+      h('button', { class: 'btn btn-primary btn-lg login-btn', onClick: attempt }, T.sign_in)
     ])
   );
+
+  setTimeout(() => userInput.focus(), 50);
   return wrap;
 }

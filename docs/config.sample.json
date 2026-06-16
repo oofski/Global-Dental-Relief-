@@ -1,16 +1,9 @@
 {
-  "_comment": "Copy to %APPDATA%/gdr-clinic/config.json on each laptop (the app also auto-creates it on first run). ui_language sets the app interface; report_language sets the language of GENERATED reports/exports; consent_language is the patient consent form language.",
+  "_comment": "Copy to %APPDATA%/gdr-clinic/config.json on each laptop (the app also auto-creates it on first run). User ACCOUNTS (username + password) are managed in the in-app Admin portal, not here. ui_language sets the app interface; report_language sets the language of GENERATED reports/exports; consent_language is the patient consent form language.",
   "patient_number_start": 1,
   "clinic_name": "GDR Clinic — Mexico",
   "deployment_label": "Mexico 2026",
   "ui_language": "en",
   "report_language": "es",
-  "consent_language": "es",
-  "roles": {
-    "check_in": { "pin": "1111", "access": "station" },
-    "dentist":  { "pin": "2222", "access": "station" },
-    "cleaning": { "pin": "3333", "access": "station" },
-    "fluoride": { "pin": "4444", "access": "station" },
-    "checkout": { "pin": "0000", "access": "admin" }
-  }
+  "consent_language": "es"
 }

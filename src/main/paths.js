@@ -32,6 +32,7 @@ const paths = {
   master: () => path.join(baseDir(), 'master'),
   masterFile: () => path.join(baseDir(), 'master', 'master_db.json'),
   configFile: () => path.join(baseDir(), 'config.json'),
+  usersFile: () => path.join(baseDir(), 'users.json'),
   driveLog: () => path.join(baseDir(), 'master', 'drive_log.json'),
   exports: () => ensure(path.join(baseDir(), 'exports')),
   simDrive: () => ensure(path.join(baseDir(), 'sim-drive')),
