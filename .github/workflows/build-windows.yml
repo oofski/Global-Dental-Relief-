@@ -44,6 +44,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Per-version release notes from CHANGELOG.md (shown on the GitHub Release).
+      - name: Set release notes from CHANGELOG
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          node scripts/changelog.js "$VERSION" > RELEASE_NOTES.md
+          echo "Release notes for v$VERSION:"; cat RELEASE_NOTES.md
+          gh release edit "v$VERSION" --title "v$VERSION" --notes-file RELEASE_NOTES.md
+
       - name: List build output
         shell: bash
         run: ls -lh release/*.exe release/*.yml || true
