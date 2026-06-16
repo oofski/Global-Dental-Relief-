@@ -1,0 +1,60 @@
+{
+  "name": "gdr-clinic",
+  "version": "1.0.0",
+  "description": "Software Smiles — Global Dental Relief offline clinic practice management (Phase 1, Mexico / Spanish).",
+  "author": "Software Smiles — Sidharth Rane",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "smoke": "node scripts/smoke-test.js",
+    "dist": "electron-builder --win --x64",
+    "dist:portable": "electron-builder --win portable --x64",
+    "pack": "electron-builder --dir"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.softwaresmiles.gdr",
+    "productName": "GDR Clinic",
+    "copyright": "Copyright © 2026 Software Smiles",
+    "directories": {
+      "output": "release",
+      "buildResources": "assets"
+    },
+    "files": [
+      "src/**/*",
+      "assets/icon.*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "icon": "assets/icon.ico",
+      "artifactName": "GDR-Clinic-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "GDR-Clinic-Portable-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "GDR Clinic",
+      "installerLanguages": ["es_ES", "en_US"],
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}
