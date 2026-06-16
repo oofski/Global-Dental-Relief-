@@ -4,8 +4,9 @@
  * can add Khmer / Nepali / Tibetan / Guatemalan Spanish / Kenyan languages).
  */
 export const es = {
-  app_title: 'GDR Clínica',
-  by: 'Software Smiles',
+  app_title: 'Mexico Clinic — Global Dental Relief',
+  by: 'Software Smiles™',
+  copyright: '© 2026 Software Smiles™ · Todos los derechos reservados.',
   loading: 'Cargando…',
 
   // Login

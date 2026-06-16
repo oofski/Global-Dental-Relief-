@@ -13,7 +13,7 @@ const DEFAULT_CONFIG = {
   // Open question 11.4: start patient numbering fresh from 1 by default.
   // Set patient_number_start to continue GDR's existing sequence.
   patient_number_start: 1,
-  clinic_name: 'Mexico Clinic',
+  clinic_name: 'Mexico Clinic - Global Dental Relief',
   deployment_label: '',
   // Language settings:
   //  - ui_language: the application interface language ('en' | 'es').
@@ -46,7 +46,7 @@ function load() {
 }
 
 // Old seeded clinic names that should be migrated to the current default.
-const LEGACY_CLINIC_NAMES = ['GDR — Clínica México', 'GDR Clinic — Mexico'];
+const LEGACY_CLINIC_NAMES = ['GDR — Clínica México', 'GDR Clinic — Mexico', 'Mexico Clinic'];
 
 function mergeDefaults(c) {
   const out = JSON.parse(JSON.stringify(DEFAULT_CONFIG));

@@ -4,6 +4,15 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.0.6 — 2026-06-16
+- Renamed the application to **Mexico Clinic - Global Dental Relief** (header,
+  window title, login, and clinic-name default; existing installs auto-migrate).
+- Sleeker, more structured UI: **royal-blue** palette, crisper squared edges,
+  defined borders, underline-style tabs, and tabular reports — a more robust
+  "operations console" look (less rounded).
+- Added **Software Smiles™** trademark marks and **© 2026** copyright notices on
+  the login screen, header, and exported reports.
+
 ## v1.0.5 — 2026-06-16
 - Add a reproducible fake-data generator (`scripts/make-sample-data.js`) that
   produces ready-to-load patient drive files and a master-DB import for testing

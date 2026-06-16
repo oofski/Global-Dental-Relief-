@@ -5,8 +5,9 @@
  * this UI language. See i18n/index.js and src/main/i18n.js.
  */
 export const en = {
-  app_title: 'GDR Clinic',
-  by: 'Software Smiles',
+  app_title: 'Mexico Clinic — Global Dental Relief',
+  by: 'Software Smiles™',
+  copyright: '© 2026 Software Smiles™ · All rights reserved.',
   loading: 'Loading…',
 
   // Login

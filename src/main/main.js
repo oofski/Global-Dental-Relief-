@@ -25,7 +25,7 @@ function createWindow() {
     minHeight: 700,
     backgroundColor: '#0d6e78',
     icon: path.join(__dirname, '..', '..', 'assets', 'icon.png'),
-    title: 'Mexico Clinic — Software Smiles',
+    title: 'Mexico Clinic - Global Dental Relief',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

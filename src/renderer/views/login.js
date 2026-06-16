@@ -59,7 +59,11 @@ export function renderLogin({ config, onLogin }) {
         h('div', { class: 'pw-row' }, [passInput, toggleBtn])
       ]),
       errorEl,
-      h('button', { class: 'btn btn-primary btn-lg login-btn', onClick: attempt }, T.sign_in)
+      h('button', { class: 'btn btn-primary btn-lg login-btn', onClick: attempt }, T.sign_in),
+      h('div', { class: 'login-foot' }, [
+        h('div', { text: 'Mexico Clinic — Global Dental Relief' }),
+        h('div', { text: T.copyright })
+      ])
     ])
   );
 

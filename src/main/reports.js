@@ -131,6 +131,8 @@ function exportSummaryCSV(stats) {
   lines.push('');
   lines.push([S.col_type, S.col_count].map(csvEscape).join(','));
   stats.rows.forEach((r) => lines.push([csvEscape(r.label), r.count].join(',')));
+  lines.push('');
+  lines.push(csvEscape('© 2026 Software Smiles™ — Mexico Clinic - Global Dental Relief'));
   const out = '﻿' + lines.join('\r\n'); // BOM so Excel reads UTF-8
   const file = path.join(paths.exports(), timestampName('treatment_report', 'csv'));
   fs.writeFileSync(file, out, 'utf8');
@@ -157,7 +159,9 @@ async function exportSummaryXLSX(stats) {
   ws.addRow([]);
   ws.addRow([S.col_type, S.col_count]).font = { bold: true };
   stats.rows.forEach((r) => ws.addRow([r.label, r.count]));
-  ws.getColumn(1).width = 42;
+  ws.addRow([]);
+  ws.addRow(['© 2026 Software Smiles™ — Mexico Clinic - Global Dental Relief']).font = { italic: true, size: 9, color: { argb: 'FF888888' } };
+  ws.getColumn(1).width = 46;
   ws.getColumn(2).width = 12;
   const file = path.join(paths.exports(), timestampName('treatment_report', 'xlsx'));
   await wb.xlsx.writeFile(file);
