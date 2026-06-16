@@ -1,6 +1,6 @@
 {
   "name": "gdr-clinic",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Software Smiles — Global Dental Relief offline clinic practice management (Phase 1, Mexico / Spanish).",
   "author": "Software Smiles — Sidharth Rane",
   "license": "UNLICENSED",
@@ -45,8 +45,18 @@
     ],
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] },
-        { "target": "portable", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "assets/icon.ico",
       "artifactName": "GDR-Clinic-Setup-${version}.${ext}"
@@ -62,7 +72,10 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "GDR Clinic",
-      "installerLanguages": ["es_ES", "en_US"],
+      "installerLanguages": [
+        "es_ES",
+        "en_US"
+      ],
       "deleteAppDataOnUninstall": false
     }
   }

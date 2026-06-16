@@ -4,6 +4,12 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.0.5 — 2026-06-16
+- Add a reproducible fake-data generator (`scripts/make-sample-data.js`) that
+  produces ready-to-load patient drive files and a master-DB import for testing
+  the full workflow (Reports, NV dashboard, returning-patient search).
+- Keep generated sample data out of version control.
+
 ## v1.0.4 — 2026-06-16
 - Admin **Settings** (replaces the Accounts tab): Accounts (now with an email
   field per user), Clinic settings (name, deployment, patient-number start, and

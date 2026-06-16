@@ -11,3 +11,8 @@ Thumbs.db
 master_db.json
 sim-drive/
 exports/
+# generated sample/fake data (reproducible via scripts/make-sample-data.js)
+sample-data/
+sample-patient-drive/
+GDR-sample-data.zip
+*.zip
