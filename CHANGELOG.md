@@ -4,6 +4,13 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.0.3 — 2026-06-16
+- Clinic name is now "Mexico Clinic" (was "GDR — Clínica México"); existing
+  installs auto-migrate the old seeded name on next launch.
+- Fixed remaining Spanish UI text: the simulation drive label and the native
+  file-picker dialog titles now follow the app (English) language.
+- Window title set to "Mexico Clinic — Software Smiles".
+
 ## v1.0.2 — 2026-06-16
 - Per-version release notes: each GitHub Release now shows the changes for that
   version (sourced from this file).

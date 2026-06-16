@@ -1,0 +1,164 @@
+{
+  "_gdr_envelope": 1,
+  "checksum": "9485784ff1c24447077cc0c212120d8b764b3fecd2644b622af897a1927769e9",
+  "written_at": "2026-06-16T13:19:45.324Z",
+  "payload": {
+    "id": "cf6adf2d-b09b-47aa-a0d7-c2b10c7102d5",
+    "patient_number": 147,
+    "school_group": "Escuela Primaria Benito Juárez",
+    "first_name": "Mateo",
+    "last_name": "García Hernández",
+    "age_at_first_visit": 9,
+    "sex": "M",
+    "created_date": "2025-12-10",
+    "drive_number": 12,
+    "prior_paper_history": "",
+    "medical_history": {
+      "med_date_initial": "2025-12-10",
+      "med_date_updated_1": null,
+      "med_date_updated_2": null,
+      "med_date_updated_3": null,
+      "asthma": true,
+      "medications": false,
+      "medications_text": "",
+      "recent_hospital": false,
+      "recent_hospital_text": "",
+      "allergies": true,
+      "allergies_text": "Penicilina",
+      "bleeding_problems": false,
+      "bleeding_problems_text": "",
+      "infectious_disease": false,
+      "infectious_disease_text": "",
+      "epilepsy_fainting": false,
+      "heart_problems": false,
+      "diabetes": false,
+      "last_modified": "2026-06-16T13:19:45.320Z"
+    },
+    "consent": {
+      "signed": true,
+      "signatory_name": "María Hernández (madre)",
+      "signature_image": null,
+      "signed_date": "2025-12-10T10:05:00.000Z"
+    },
+    "visits": [
+      {
+        "visit_id": "87a49137-0a17-4bbc-b98d-76d4e58230e6",
+        "patient_id": "cf6adf2d-b09b-47aa-a0d7-c2b10c7102d5",
+        "patient_number": 147,
+        "visit_date": "2025-12-10",
+        "exam_type": "E",
+        "clinician_type": "DDS",
+        "clinician_initials": "JR",
+        "nt_status": false,
+        "treatment_items": [
+          {
+            "id": "4635077e-76d6-4c9d-9f9a-b2bcd8e217d5",
+            "tooth": "19",
+            "treatment_type": "restoration",
+            "surfaces": [
+              "O",
+              "B"
+            ],
+            "surgical": false,
+            "treating_today": true,
+            "complete": true
+          },
+          {
+            "id": "81acf066-38c9-4ead-822b-80b9c3e43135",
+            "tooth": "18",
+            "treatment_type": "extraction",
+            "surfaces": [],
+            "surgical": false,
+            "treating_today": true,
+            "complete": true
+          },
+          {
+            "id": "07420bfa-4a7b-43d3-84c6-d5d07e8e71a9",
+            "tooth": "30",
+            "treatment_type": "sdf",
+            "surfaces": [],
+            "surgical": false,
+            "treating_today": true,
+            "complete": true
+          },
+          {
+            "id": "98fb6f3a-ed03-47e6-9d5c-3558abbbaa53",
+            "tooth": "31",
+            "treatment_type": "sealant",
+            "surfaces": [],
+            "surgical": false,
+            "treating_today": true,
+            "complete": true
+          },
+          {
+            "id": "2f4a3c93-853f-4335-ba35-747ecd3444fc",
+            "tooth": "3",
+            "treatment_type": "restoration",
+            "surfaces": [
+              "O"
+            ],
+            "surgical": false,
+            "treating_today": true,
+            "complete": false
+          }
+        ],
+        "treatment_notes": "",
+        "cleaning_type": "P",
+        "cleaning_done": true,
+        "cleaning_done_at": "2025-12-10T10:40:00.000Z",
+        "oh1_done": true,
+        "oh2_done": true,
+        "oh3_done": true,
+        "fluoride_done": true,
+        "fluoride_done_at": "2025-12-10T10:50:00.000Z",
+        "visit_outcome": "NV",
+        "checkout_timestamp": "2025-12-10T11:00:00.000Z",
+        "station_status": {
+          "checkin": true,
+          "dentist": true,
+          "cleaning": true,
+          "fluoride": true,
+          "checkout": true
+        },
+        "last_modified": "2026-06-16T13:19:45.320Z",
+        "synced": false,
+        "schema_version": 1
+      },
+      {
+        "visit_id": "47f7dc7a-95c8-4e5e-8ea6-1220d70f3712",
+        "patient_id": "cf6adf2d-b09b-47aa-a0d7-c2b10c7102d5",
+        "patient_number": 147,
+        "visit_date": "2026-06-16",
+        "exam_type": null,
+        "clinician_type": null,
+        "clinician_initials": "",
+        "nt_status": false,
+        "treatment_items": [],
+        "treatment_notes": "",
+        "cleaning_type": "None",
+        "cleaning_done": false,
+        "cleaning_done_at": null,
+        "oh1_done": true,
+        "oh2_done": false,
+        "oh3_done": false,
+        "fluoride_done": false,
+        "fluoride_done_at": null,
+        "visit_outcome": null,
+        "checkout_timestamp": null,
+        "station_status": {
+          "checkin": true,
+          "dentist": false,
+          "cleaning": false,
+          "fluoride": false,
+          "checkout": false
+        },
+        "last_modified": "2026-06-16T13:19:45.321Z",
+        "synced": false,
+        "schema_version": 1
+      }
+    ],
+    "last_modified": "2026-06-16T13:19:45.320Z",
+    "synced": false,
+    "schema_version": 1
+  }
+}

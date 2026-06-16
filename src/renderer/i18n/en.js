@@ -51,6 +51,7 @@ export const en = {
   refresh: 'Refresh',
   pick_folder: 'Choose folder…',
   no_drives: 'No drives detected. Use “Choose folder”.',
+  sim_drive: 'Simulation (test folder)',
   save_to_drive: 'Save to drive',
   saved: 'Saved',
   error: 'Error',

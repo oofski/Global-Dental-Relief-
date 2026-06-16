@@ -66,7 +66,7 @@ async function listDrives() {
   const sim = paths.simDrive();
   result.push({
     path: sim,
-    label: 'Simulación (carpeta de prueba)',
+    label: 'Simulation (test folder)', // renderer localizes this via T.sim_drive
     device: 'SIM',
     free: 0,
     size: 0,

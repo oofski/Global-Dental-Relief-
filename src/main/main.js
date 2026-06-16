@@ -25,7 +25,7 @@ function createWindow() {
     minHeight: 700,
     backgroundColor: '#0d6e78',
     icon: path.join(__dirname, '..', '..', 'assets', 'icon.png'),
-    title: 'GDR Clinic — Software Smiles',
+    title: 'Mexico Clinic — Software Smiles',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -71,7 +71,11 @@ function createWindow() {
             await new Promise((r) => setTimeout(r, 900));
             const roleChip = await mainWindow.webContents.executeJavaScript("(document.querySelector('.role-chip')||{}).textContent||''");
             const tabs = await mainWindow.webContents.executeJavaScript("Array.from(document.querySelectorAll('.tab')).map(t=>t.textContent)");
+            const brand = await mainWindow.webContents.executeJavaScript("(document.querySelector('.brand-title')||{}).textContent||''");
+            const driveLabel = await mainWindow.webContents.executeJavaScript("(document.querySelector('.drive-label')||{}).textContent||''");
             console.log('[smoke] after login role chip:', JSON.stringify(roleChip));
+            console.log('[smoke] brand title:', JSON.stringify(brand));
+            console.log('[smoke] drive label:', JSON.stringify(driveLabel));
             console.log('[smoke] tabs:', JSON.stringify(tabs));
             if (!roleChip) hadError = true;
             // If an Accounts tab exists, open it and verify seeded accounts load.
@@ -141,6 +145,16 @@ app.on('window-all-closed', () => {
 function ok(data) { return { ok: true, data }; }
 function fail(error, detail) { return { ok: false, error, detail }; }
 
+// Localized strings for native dialogs (titles shown by the OS file picker).
+function uiText(key) {
+  const lang = (config.load().ui_language) || 'en';
+  const M = {
+    en: { pick_folder: 'Select drive / folder', import_master: 'Import master database' },
+    es: { pick_folder: 'Seleccionar dispositivo / carpeta', import_master: 'Importar base de datos maestra' }
+  };
+  return (M[lang] || M.en)[key];
+}
+
 // Non-secret config exposed to the renderer (no PINs).
 function publicConfig() {
   const c = config.load();
@@ -209,7 +223,7 @@ function registerIpc() {
   ipcMain.handle('drive:clear', (_e, p) => drive.clearDrive(p));
   ipcMain.handle('drive:pickFolder', async () => {
     const res = await dialog.showOpenDialog(mainWindow, {
-      title: 'Seleccionar dispositivo / carpeta',
+      title: uiText('pick_folder'),
       properties: ['openDirectory']
     });
     if (res.canceled || !res.filePaths.length) return ok(null);
@@ -240,7 +254,7 @@ function registerIpc() {
   });
   ipcMain.handle('db:importMaster', async () => {
     const res = await dialog.showOpenDialog(mainWindow, {
-      title: 'Importar base de datos maestra',
+      title: uiText('import_master'),
       properties: ['openFile'],
       filters: [{ name: 'JSON', extensions: ['json'] }]
     });

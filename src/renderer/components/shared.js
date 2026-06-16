@@ -153,7 +153,7 @@ export function driveSelector({ mode = 'read', onLoaded, onSelected } = {}) {
           onClick: async () => { selected = d.path; render(); await afterSelect(); }
         }, [
           h('span', { class: 'drive-icon', text: d.simulated ? '🧪' : '💾' }),
-          h('span', { class: 'drive-label', text: `${d.label}` }),
+          h('span', { class: 'drive-label', text: d.simulated ? T.sim_drive : d.label }),
           h('span', { class: 'drive-path', text: d.path })
         ]);
         list.appendChild(btn);

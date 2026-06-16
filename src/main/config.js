@@ -13,7 +13,7 @@ const DEFAULT_CONFIG = {
   // Open question 11.4: start patient numbering fresh from 1 by default.
   // Set patient_number_start to continue GDR's existing sequence.
   patient_number_start: 1,
-  clinic_name: 'GDR Clinic — Mexico',
+  clinic_name: 'Mexico Clinic',
   deployment_label: '',
   // Language settings:
   //  - ui_language: the application interface language ('en' | 'es').
@@ -33,6 +33,8 @@ function load() {
     if (fs.existsSync(file)) {
       const onDisk = JSON.parse(fs.readFileSync(file, 'utf8'));
       cache = mergeDefaults(onDisk);
+      // Persist migrations (e.g. legacy clinic name) back to disk.
+      if (JSON.stringify(onDisk) !== JSON.stringify(cache)) { try { save(cache); } catch (_) {} }
     } else {
       cache = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
       save(cache);
@@ -43,11 +45,15 @@ function load() {
   return cache;
 }
 
+// Old seeded clinic names that should be migrated to the current default.
+const LEGACY_CLINIC_NAMES = ['GDR — Clínica México', 'GDR Clinic — Mexico'];
+
 function mergeDefaults(c) {
   const out = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
   if (!c || typeof c !== 'object') return out;
   if (c.patient_number_start != null) out.patient_number_start = c.patient_number_start;
-  if (c.clinic_name) out.clinic_name = c.clinic_name;
+  // Keep a custom clinic name, but auto-migrate the old seeded defaults.
+  if (c.clinic_name && !LEGACY_CLINIC_NAMES.includes(c.clinic_name)) out.clinic_name = c.clinic_name;
   if (c.deployment_label) out.deployment_label = c.deployment_label;
   if (c.ui_language) out.ui_language = c.ui_language;
   if (c.report_language) out.report_language = c.report_language;

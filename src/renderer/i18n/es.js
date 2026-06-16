@@ -50,6 +50,7 @@ export const es = {
   refresh: 'Actualizar',
   pick_folder: 'Elegir carpeta…',
   no_drives: 'No se detectaron dispositivos. Use “Elegir carpeta”.',
+  sim_drive: 'Simulación (carpeta de prueba)',
   save_to_drive: 'Guardar en dispositivo',
   saved: 'Guardado',
   error: 'Error',

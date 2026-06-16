@@ -166,7 +166,7 @@ export function renderCheckin(container, ctx) {
           onClick: () => { drivePath = d.path; W.drivePath = d.path; loadDrives(); driveStatusEl.textContent = d.path; }
         }, [
           h('span', { class: 'drive-icon', text: d.simulated ? '🧪' : '💾' }),
-          h('span', { class: 'drive-label', text: d.label }),
+          h('span', { class: 'drive-label', text: d.simulated ? T.sim_drive : d.label }),
           h('span', { class: 'drive-path', text: d.path })
         ])
       ));
