@@ -78,14 +78,21 @@ function createWindow() {
             console.log('[smoke] drive label:', JSON.stringify(driveLabel));
             console.log('[smoke] tabs:', JSON.stringify(tabs));
             if (!roleChip) hadError = true;
-            // If an Accounts tab exists, open it and verify seeded accounts load.
-            const hasAccounts = await mainWindow.webContents.executeJavaScript("!!Array.from(document.querySelectorAll('.tab')).find(t=>t.textContent.includes('Accounts'))");
-            if (hasAccounts) {
-              await mainWindow.webContents.executeJavaScript("Array.from(document.querySelectorAll('.tab')).find(t=>t.textContent.includes('Accounts')).click()");
+            // If a Settings tab exists (admin), open it -> Accounts section -> verify seeded accounts.
+            const hasSettings = await mainWindow.webContents.executeJavaScript("!!Array.from(document.querySelectorAll('.tab')).find(t=>t.textContent.includes('Settings'))");
+            if (hasSettings) {
+              await mainWindow.webContents.executeJavaScript("Array.from(document.querySelectorAll('.tab')).find(t=>t.textContent.includes('Settings')).click()");
               await new Promise((r) => setTimeout(r, 700));
+              const subtabs = await mainWindow.webContents.executeJavaScript("Array.from(document.querySelectorAll('.subtab')).map(t=>t.textContent)");
               const rows = await mainWindow.webContents.executeJavaScript("document.querySelectorAll('.accounts-table tbody tr').length");
+              console.log('[smoke] settings subtabs:', JSON.stringify(subtabs));
               console.log('[smoke] account rows:', rows);
               if (rows < 6) hadError = true;
+              // Open the Clinic section.
+              await mainWindow.webContents.executeJavaScript("(Array.from(document.querySelectorAll('.subtab')).find(t=>/Clinic|Cl.nica/.test(t.textContent))||{}).click&&Array.from(document.querySelectorAll('.subtab')).find(t=>/Clinic|Cl.nica/.test(t.textContent)).click()");
+              await new Promise((r) => setTimeout(r, 400));
+              const hasClinicForm = await mainWindow.webContents.executeJavaScript("!!document.querySelector('.settings-card')");
+              console.log('[smoke] clinic settings form present:', hasClinicForm);
             }
           }
         } catch (e) { hadError = true; console.error('[smoke] eval failed', e); }
@@ -106,34 +113,45 @@ app.whenReady().then(() => {
 });
 
 // ---- Auto-update (electron-updater + GitHub Releases) -------------------
-// Checks the public GitHub repo's releases for a newer version, downloads it in
-// the background, and prompts the user to restart. Only runs in the packaged,
-// installed (NSIS) app — never in dev or the portable build.
-function setupAutoUpdate() {
-  if (isDev || !app.isPackaged || process.env.GDR_SMOKE_LAUNCH) return;
-  let autoUpdater;
+// Checks the public GitHub repo's releases for a newer version, downloads it,
+// and (via the admin Settings page) lets the user install + restart. Status is
+// forwarded to the renderer. Only active in the packaged, installed app.
+let autoUpdater = null;
+let updateState = { status: 'idle', version: null, percent: 0, error: null };
+
+function updaterAvailable() {
+  return !!(app.isPackaged && !isDev && !process.env.GDR_SMOKE_LAUNCH);
+}
+
+function pushUpdateStatus(patch) {
+  updateState = Object.assign({}, updateState, patch);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update:status', updateState);
+  }
+}
+
+function getUpdater() {
+  if (autoUpdater) return autoUpdater;
   try { ({ autoUpdater } = require('electron-updater')); }
-  catch (e) { return; } // dependency missing -> silently skip
+  catch (e) { return null; }
+  autoUpdater.autoDownload = true;            // download as soon as one is found
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on('checking-for-update', () => pushUpdateStatus({ status: 'checking', error: null }));
+  autoUpdater.on('update-available', (info) => pushUpdateStatus({ status: 'available', version: info && info.version, percent: 0 }));
+  autoUpdater.on('update-not-available', () => pushUpdateStatus({ status: 'up-to-date' }));
+  autoUpdater.on('download-progress', (p) => pushUpdateStatus({ status: 'downloading', percent: Math.round(p.percent || 0) }));
+  autoUpdater.on('update-downloaded', (info) => pushUpdateStatus({ status: 'downloaded', version: info && info.version, percent: 100 }));
+  autoUpdater.on('error', (err) => pushUpdateStatus({ status: 'error', error: String(err && err.message ? err.message : err) }));
+  return autoUpdater;
+}
+
+function setupAutoUpdate() {
+  if (!updaterAvailable()) return;
+  const u = getUpdater();
+  if (!u) return;
   try {
-    autoUpdater.autoDownload = true;
-    autoUpdater.autoInstallOnAppQuit = true;
-    autoUpdater.on('update-downloaded', async (info) => {
-      if (!mainWindow) return;
-      const res = await dialog.showMessageBox(mainWindow, {
-        type: 'info',
-        buttons: ['Restart now', 'Later'],
-        defaultId: 0,
-        cancelId: 1,
-        title: 'Update ready',
-        message: `Version ${info && info.version ? info.version : ''} has been downloaded.`,
-        detail: 'Restart the application to apply the update.'
-      });
-      if (res.response === 0) { setImmediate(() => autoUpdater.quitAndInstall()); }
-    });
-    autoUpdater.on('error', (err) => { console.error('[auto-update]', err && err.message ? err.message : err); });
-    autoUpdater.checkForUpdates().catch(() => {});
-    // Re-check every 6 hours in case the laptop stays on between updates.
-    setInterval(() => { autoUpdater.checkForUpdates().catch(() => {}); }, 6 * 60 * 60 * 1000);
+    u.checkForUpdates().catch(() => {});
+    setInterval(() => { u.checkForUpdates().catch(() => {}); }, 6 * 60 * 60 * 1000);
   } catch (e) { /* never block startup on updater */ }
 }
 
@@ -192,6 +210,34 @@ function registerIpc() {
   // Synchronous channel: the preload reads this during page load so the renderer
   // can pick its UI language before any module evaluates (no flash, no async).
   ipcMain.on('config:get-sync', (e) => { e.returnValue = publicConfig(); });
+  ipcMain.handle('config:save', (_e, patch) => {
+    if (!requireAdmin()) return fail('forbidden');
+    try {
+      const c = config.load();
+      const allowed = ['clinic_name', 'deployment_label', 'patient_number_start', 'ui_language', 'report_language', 'consent_language'];
+      for (const k of allowed) { if (patch && patch[k] != null && patch[k] !== '') c[k] = patch[k]; }
+      if (patch && patch.deployment_label != null) c.deployment_label = patch.deployment_label; // allow clearing
+      config.save(c);
+      return ok(publicConfig());
+    } catch (e) { return fail('save_failed', String(e.message || e)); }
+  });
+
+  // --- Software updates (admin Settings) ---
+  ipcMain.handle('update:available', () => ok(updaterAvailable()));
+  ipcMain.handle('update:state', () => ok(updateState));
+  ipcMain.handle('update:check', () => {
+    if (!updaterAvailable()) return fail('updates_unavailable');
+    const u = getUpdater();
+    if (!u) return fail('updates_unavailable');
+    pushUpdateStatus({ status: 'checking', error: null });
+    u.checkForUpdates().catch((err) => pushUpdateStatus({ status: 'error', error: String(err && err.message || err) }));
+    return ok(true);
+  });
+  ipcMain.handle('update:install', () => {
+    if (!updaterAvailable() || !autoUpdater) return fail('updates_unavailable');
+    setImmediate(() => { try { autoUpdater.quitAndInstall(); } catch (_) {} });
+    return ok(true);
+  });
 
   // --- Master DB ---
   ipcMain.handle('db:nextNumber', () => ok(db.peekNextNumber()));

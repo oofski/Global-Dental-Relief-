@@ -4,6 +4,21 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.0.4 — 2026-06-16
+- Admin **Settings** (replaces the Accounts tab): Accounts (now with an email
+  field per user), Clinic settings (name, deployment, patient-number start, and
+  language selectors), and Updates (Check for updates / download / Install &
+  restart, with live status).
+- Staff interface is now consistently **English**: fixed the tooth-chart
+  treatment/surface labels, the on-screen Reports table, and a stray Spanish
+  toast. The patient **consent form stays Spanish**, and exported report **files**
+  stay Spanish (configurable in Settings).
+- Visual refresh across the app (header, login, cards, buttons, tabs, tooth
+  chart, tables) — warmer, more polished, less generic.
+- Spec-compliance audit: all five stations, flash-drive flow, data model,
+  reporting, NV dashboard, and returning-patient flow verified against the
+  product overview.
+
 ## v1.0.3 — 2026-06-16
 - Clinic name is now "Mexico Clinic" (was "GDR — Clínica México"); existing
   installs auto-migrate the old seeded name on next launch.

@@ -61,6 +61,7 @@ export function renderAccounts(container) {
     const rows = usersList.map((u) => h('tr', { class: u.active ? '' : 'row-inactive' }, [
       h('td', { text: u.username }),
       h('td', { text: u.display_name || '—' }),
+      h('td', { text: u.email || '—' }),
       h('td', {}, h('span', { class: 'tag', text: ROLE_LABELS[u.role] || u.role })),
       h('td', {}, h('span', { class: 'tag ' + (u.active ? 'tag-F' : 'tag-NV'), text: u.active ? T.active : T.inactive })),
       h('td', { class: 'acct-actions' }, [
@@ -81,6 +82,7 @@ export function renderAccounts(container) {
           h('thead', {}, h('tr', {}, [
             h('th', { text: T.username }),
             h('th', { text: T.display_name }),
+            h('th', { text: T.email }),
             h('th', { text: T.role }),
             h('th', { text: T.status }),
             h('th', { text: T.actions })
@@ -95,11 +97,13 @@ export function renderAccounts(container) {
   async function createAccount() {
     const uname = h('input', { class: 'text-input', autocapitalize: 'none', spellcheck: 'false' });
     const dname = h('input', { class: 'text-input' });
+    const emailInp = h('input', { class: 'text-input', type: 'email', autocapitalize: 'none', spellcheck: 'false' });
     const role = roleSelect('dentist');
     const pw = passwordField('welcome123');
     const body = h('div', { class: 'form-grid' }, [
       field(T.username, uname, { required: true }),
       field(T.display_name, dname),
+      field(T.email, emailInp),
       field(T.role, role, { required: true }),
       field(T.password, pw.node, { hint: T.default_pw_hint })
     ]);
@@ -111,6 +115,7 @@ export function renderAccounts(container) {
     const res = await window.api.users.create({
       username: uname.value.trim(),
       display_name: dname.value.trim(),
+      email: emailInp.value.trim(),
       role: role.value,
       password: pw.get()
     });
@@ -121,10 +126,12 @@ export function renderAccounts(container) {
 
   async function editAccount(u) {
     const dname = h('input', { class: 'text-input', value: u.display_name || '' });
+    const emailInp = h('input', { class: 'text-input', type: 'email', value: u.email || '', autocapitalize: 'none', spellcheck: 'false' });
     const role = roleSelect(u.role);
     const body = h('div', { class: 'form-grid' }, [
       field(T.username, h('input', { class: 'text-input', value: u.username, disabled: true })),
       field(T.display_name, dname),
+      field(T.email, emailInp),
       field(T.role, role)
     ]);
     const val = await modal({
@@ -132,7 +139,7 @@ export function renderAccounts(container) {
       actions: [{ label: T.cancel, value: false }, { label: T.save, value: true, primary: true }]
     });
     if (!val) return;
-    const res = await window.api.users.update(u.id, { display_name: dname.value.trim(), role: role.value });
+    const res = await window.api.users.update(u.id, { display_name: dname.value.trim(), email: emailInp.value.trim(), role: role.value });
     if (!res.ok) { toast(errText(res.error), 'error'); return; }
     toast(T.account_updated, 'success');
     load();

@@ -97,11 +97,12 @@ function seedDefaults() {
   persist();
 }
 
-function makeUser(username, password, role, displayName) {
+function makeUser(username, password, role, displayName, email) {
   return {
     id: model.uuid(),
     username: String(username).trim(),
     display_name: displayName || username,
+    email: email || '',
     role,
     password: hashPassword(password),
     active: true,
@@ -118,6 +119,7 @@ function publicUser(u) {
     id: u.id,
     username: u.username,
     display_name: u.display_name,
+    email: u.email || '',
     role: u.role,
     active: u.active !== false,
     must_change_password: !!u.must_change_password,
@@ -164,7 +166,7 @@ function create({ username, password, role, display_name }) {
   if (!validRole(role)) return { ok: false, error: 'role_invalid' };
   const pw = String(password || '');
   if (pw.length < 6) return { ok: false, error: 'password_too_short' };
-  const u = makeUser(uname, pw, role, display_name);
+  const u = makeUser(uname, pw, role, display_name, arguments[0].email);
   store.users.push(u);
   persist();
   return { ok: true, user: publicUser(u) };
@@ -175,6 +177,7 @@ function update(id, changes) {
   const u = store.users.find((x) => x.id === id);
   if (!u) return { ok: false, error: 'not_found' };
   if (changes.display_name != null) u.display_name = String(changes.display_name).trim() || u.display_name;
+  if (changes.email != null) u.email = String(changes.email).trim();
   if (changes.role != null) {
     if (!validRole(changes.role)) return { ok: false, error: 'role_invalid' };
     // Don't allow demoting the last active admin.

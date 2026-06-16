@@ -3,7 +3,7 @@ import { h, mount, toast, alertDialog, confirmDialog, fmtDate, fmtDateTime, time
 import { T } from '../i18n/index.js';
 import { alertBanner, patientSummary, visitHistoryPanel, driveSelector } from '../components/shared.js';
 import { renderReports } from './reports.js';
-import { renderAccounts } from '../components/accounts.js';
+import { renderSettings } from './settings.js';
 
 export function renderCheckout(container, ctx) {
   const canManage = !!(ctx && ctx.manage_users);
@@ -15,7 +15,7 @@ export function renderCheckout(container, ctx) {
       tabBtn('nv', '🔁 ' + T.nv_title),
       tabBtn('reports', '📊 ' + T.reports_title)
     ];
-    if (canManage) t.push(tabBtn('accounts', '👤 ' + T.tab_accounts));
+    if (canManage) t.push(tabBtn('settings', '⚙ ' + T.tab_settings));
     return h('div', { class: 'tabs' }, t);
   }
   function tabBtn(key, label) {
@@ -27,7 +27,7 @@ export function renderCheckout(container, ctx) {
     mount(container, h('div', { class: 'view checkout-view' }, [tabs(), body]));
     if (activeTab === 'process') screenLoad(body);
     else if (activeTab === 'nv') screenNV(body);
-    else if (activeTab === 'accounts' && canManage) renderAccounts(body);
+    else if (activeTab === 'settings' && canManage) renderSettings(body, ctx);
     else renderReports(body, ctx);
   }
 

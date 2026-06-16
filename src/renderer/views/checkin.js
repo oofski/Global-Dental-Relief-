@@ -102,7 +102,7 @@ export function renderCheckin(container, ctx) {
     readBtn.addEventListener('click', () => {
       if (reading) { tts.stop(); reading = false; setReadLabel(); return; }
       const ok = tts.speak(consentSpeechText(), { onend: () => { reading = false; setReadLabel(); } });
-      if (!ok) { toast('TTS no disponible', 'warn'); return; }
+      if (!ok) { toast(T.tts_unavailable, 'warn'); return; }
       reading = true; setReadLabel();
     });
 

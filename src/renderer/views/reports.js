@@ -34,16 +34,17 @@ export function renderReports(container, ctx) {
     const res = await window.api.report.stats({ from: range.from || null, to: range.to || null });
     if (!res.ok) { mount(tableHost, h('div', { class: 'muted', text: T.error })); return; }
     const stats = res.data;
+    // On-screen table is in the staff UI language (mapped by row key); the
+    // EXPORTED files use the report language (Spanish) — see main/reports.js.
     const rows = stats.rows.map((r) => h('tr', { class: r.count > 0 ? '' : 'row-zero' }, [
-      h('td', { text: r.label }),
+      h('td', { text: T['rpt_' + r.key] || r.label }),
       h('td', { class: 'num-cell', text: String(r.count) })
     ]));
-    // Headers use the REPORT language (so the on-screen table matches the file).
     mount(tableHost,
       h('table', { class: 'report-table' }, [
         h('thead', {}, h('tr', {}, [
-          h('th', { text: stats.col_type || T.treatment_type_col }),
-          h('th', { class: 'num-cell', text: stats.col_count || T.count_col })
+          h('th', { text: T.treatment_type_col }),
+          h('th', { class: 'num-cell', text: T.count_col })
         ])),
         h('tbody', {}, rows)
       ])

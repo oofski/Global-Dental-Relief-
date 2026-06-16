@@ -33,7 +33,19 @@ contextBridge.exposeInMainWorld('api', {
     remove: (id) => invoke('users:remove', id)
   },
   config: {
-    get: () => invoke('config:get')
+    get: () => invoke('config:get'),
+    save: (patch) => invoke('config:save', patch)
+  },
+  update: {
+    available: () => invoke('update:available'),
+    state: () => invoke('update:state'),
+    check: () => invoke('update:check'),
+    install: () => invoke('update:install'),
+    onStatus: (cb) => {
+      const handler = (_e, state) => cb(state);
+      ipcRenderer.on('update:status', handler);
+      return () => ipcRenderer.removeListener('update:status', handler);
+    }
   },
   db: {
     nextNumber: () => invoke('db:nextNumber'),

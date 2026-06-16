@@ -112,7 +112,7 @@ function editTooth(visit, tooth, system) {
       preview.textContent = C.formatItem(tmp) || `${T.tooth} ${tooth}`;
     }
 
-    // Treatment type segmented control
+    // Treatment type segmented control (labels in the staff UI language)
     const typeRow = h('div', { class: 'seg' }, C.TREATMENTS.map((tr) =>
       h('button', {
         class: 'seg-btn' + (state.treatment_type === tr.key ? ' active' : ''),
@@ -124,7 +124,7 @@ function editTooth(visit, tooth, system) {
           surgicalWrap.style.display = tr.key === 'extraction' ? '' : 'none';
           refreshPreview();
         }
-      }, tr.es)
+      }, T['tx_' + tr.key] || tr.es)
     ));
 
     // Surfaces multi-select
@@ -132,7 +132,7 @@ function editTooth(visit, tooth, system) {
       h('button', {
         class: 'surf-btn' + (state.surfaces.has(s.code) ? ' active' : ''),
         type: 'button',
-        title: s.es,
+        title: T['surf_' + s.code] || s.es,
         onClick: (e) => {
           if (state.surfaces.has(s.code)) state.surfaces.delete(s.code);
           else state.surfaces.add(s.code);
