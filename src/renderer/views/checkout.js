@@ -1,6 +1,6 @@
 /* Checkout / Master station (spec 5.5, 7.3). Admin role. */
 import { h, mount, toast, alertDialog, confirmDialog, fmtDate, fmtDateTime, timeSince, spinner } from '../util.js';
-import { T } from '../i18n/es.js';
+import { T } from '../i18n/index.js';
 import { alertBanner, patientSummary, visitHistoryPanel, driveSelector } from '../components/shared.js';
 import { renderReports } from './reports.js';
 

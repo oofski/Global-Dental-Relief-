@@ -1,8 +1,11 @@
 {
-  "_comment": "Copy to %APPDATA%/gdr-clinic/config.json on each laptop (the app also auto-creates it on first run). Change PINs per station and set the patient number start if continuing GDR's existing sequence.",
+  "_comment": "Copy to %APPDATA%/gdr-clinic/config.json on each laptop (the app also auto-creates it on first run). ui_language sets the app interface; report_language sets the language of GENERATED reports/exports; consent_language is the patient consent form language.",
   "patient_number_start": 1,
-  "clinic_name": "GDR — Clínica México",
+  "clinic_name": "GDR Clinic — Mexico",
   "deployment_label": "Mexico 2026",
+  "ui_language": "en",
+  "report_language": "es",
+  "consent_language": "es",
   "roles": {
     "check_in": { "pin": "1111", "access": "station" },
     "dentist":  { "pin": "2222", "access": "station" },

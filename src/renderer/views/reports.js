@@ -1,9 +1,11 @@
 /* Reports & export (spec 8). Admin (checkout) only. */
 import { h, mount, toast, alertDialog, spinner } from '../util.js';
-import { T } from '../i18n/es.js';
+import { T, LANG_NAMES } from '../i18n/index.js';
 
 export function renderReports(container, ctx) {
   const range = { from: '', to: '' };
+  const reportLang = (window.api.bootConfig && window.api.bootConfig.report_language) || 'es';
+  const reportLangName = LANG_NAMES[reportLang] || reportLang;
 
   const fromInput = h('input', { class: 'text-input', type: 'date', value: range.from });
   const toInput = h('input', { class: 'text-input', type: 'date', value: range.to });
@@ -36,9 +38,13 @@ export function renderReports(container, ctx) {
       h('td', { text: r.label }),
       h('td', { class: 'num-cell', text: String(r.count) })
     ]));
+    // Headers use the REPORT language (so the on-screen table matches the file).
     mount(tableHost,
       h('table', { class: 'report-table' }, [
-        h('thead', {}, h('tr', {}, [h('th', { text: T.treatment_type_col }), h('th', { class: 'num-cell', text: T.count_col })])),
+        h('thead', {}, h('tr', {}, [
+          h('th', { text: stats.col_type || T.treatment_type_col }),
+          h('th', { class: 'num-cell', text: stats.col_count || T.count_col })
+        ])),
         h('tbody', {}, rows)
       ])
     );
@@ -94,6 +100,7 @@ export function renderReports(container, ctx) {
         ])
       ]),
       tableHost,
+      h('div', { class: 'report-lang-note muted', text: T.report_lang_note.replace('{lang}', reportLangName) }),
       h('div', { class: 'export-row' }, [
         h('button', { class: 'btn btn-secondary', onClick: () => exportSummary('csv') }, '⬇ ' + T.export_csv),
         h('button', { class: 'btn btn-secondary', onClick: () => exportSummary('xlsx') }, '⬇ ' + T.export_xlsx),

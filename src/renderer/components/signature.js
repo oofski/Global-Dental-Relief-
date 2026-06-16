@@ -4,7 +4,7 @@
  * laptop. Returns a PNG dataURL. A typed-name fallback is provided by the view.
  */
 import { h } from '../util.js';
-import { T } from '../i18n/es.js';
+import { T } from '../i18n/index.js';
 
 export function signaturePad(onChange) {
   const canvas = h('canvas', { class: 'sig-canvas', width: 600, height: 180 });

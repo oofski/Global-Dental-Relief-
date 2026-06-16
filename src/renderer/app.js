@@ -1,6 +1,6 @@
 /* App bootstrap, station login, and role-based routing. */
 import { h, mount, clear, toast, confirmDialog } from './util.js';
-import { T } from './i18n/es.js';
+import { T } from './i18n/index.js';
 
 import { renderLogin } from './views/login.js';
 import { renderCheckin } from './views/checkin.js';

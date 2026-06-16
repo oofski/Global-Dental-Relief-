@@ -15,8 +15,16 @@ const DEFAULT_CONFIG = {
   // Open question 11.4: start patient numbering fresh from 1 by default.
   // Set patient_number_start to continue GDR's existing sequence.
   patient_number_start: 1,
-  clinic_name: 'GDR — Clínica México',
+  clinic_name: 'GDR Clinic — Mexico',
   deployment_label: '',
+  // Language settings:
+  //  - ui_language: the application interface language ('en' | 'es').
+  //  - report_language: language for GENERATED reports/exports ('es' | 'en').
+  //  - consent_language: the patient consent form language (Spanish for Mexico).
+  // Spec change: UI in English, consent + reports in Spanish (configurable).
+  ui_language: 'en',
+  report_language: 'es',
+  consent_language: 'es',
   // Default station PINs (change in config.json on each laptop).
   roles: {
     check_in: { pin: '1111', access: 'station' },
@@ -52,6 +60,9 @@ function mergeDefaults(c) {
   if (c.patient_number_start != null) out.patient_number_start = c.patient_number_start;
   if (c.clinic_name) out.clinic_name = c.clinic_name;
   if (c.deployment_label) out.deployment_label = c.deployment_label;
+  if (c.ui_language) out.ui_language = c.ui_language;
+  if (c.report_language) out.report_language = c.report_language;
+  if (c.consent_language) out.consent_language = c.consent_language;
   if (c.roles && typeof c.roles === 'object') {
     for (const k of Object.keys(out.roles)) {
       if (c.roles[k] && c.roles[k].pin != null) out.roles[k].pin = String(c.roles[k].pin);

@@ -1,6 +1,6 @@
 /* Reusable clinical UI pieces shared across stations. */
 import { h, fmtDate, fmtDateTime, toast, spinner, mount } from '../util.js';
-import { T } from '../i18n/es.js';
+import { T } from '../i18n/index.js';
 
 const C = window.api.codes;
 

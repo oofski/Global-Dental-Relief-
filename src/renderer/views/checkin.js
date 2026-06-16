@@ -1,6 +1,6 @@
 /* Check-In station (spec 5.1, 7.1, 7.2). */
 import { h, mount, field, checkbox, toast, alertDialog, fmtDate, spinner } from '../util.js';
-import { T } from '../i18n/es.js';
+import { T } from '../i18n/index.js';
 import { medForm } from '../components/medform.js';
 import { signaturePad } from '../components/signature.js';
 import { tts } from '../components/tts.js';

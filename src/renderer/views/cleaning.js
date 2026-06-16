@@ -1,6 +1,6 @@
 /* Cleaning station (spec 5.3) — single-purpose. */
 import { h, mount, checkbox, toast, alertDialog, fmtDateTime, spinner } from '../util.js';
-import { T } from '../i18n/es.js';
+import { T } from '../i18n/index.js';
 import { alertBanner, patientSummary, driveSelector } from '../components/shared.js';
 
 export function renderCleaning(container) {

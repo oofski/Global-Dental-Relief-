@@ -1,6 +1,6 @@
 /* Station login (spec 3.1) — pick a role, enter PIN. */
 import { h, mount, toast } from '../util.js';
-import { T } from '../i18n/es.js';
+import { T } from '../i18n/index.js';
 
 const ROLES = [
   { key: 'check_in', label: T.role_check_in, icon: '📝' },

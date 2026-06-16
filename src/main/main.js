@@ -47,7 +47,11 @@ function createWindow() {
       setTimeout(async () => {
         try {
           const roleTiles = await mainWindow.webContents.executeJavaScript("document.querySelectorAll('.role-tile').length");
+          const titleText = await mainWindow.webContents.executeJavaScript("(document.querySelector('.login-h2')||{}).textContent||''");
+          const firstRole = await mainWindow.webContents.executeJavaScript("(document.querySelector('.role-name')||{}).textContent||''");
           console.log('[smoke] login role tiles rendered:', roleTiles);
+          console.log('[smoke] login title:', JSON.stringify(titleText));
+          console.log('[smoke] first role label:', JSON.stringify(firstRole));
           if (!roleTiles) hadError = true;
         } catch (e) { hadError = true; console.error('[smoke] eval failed', e); }
         console.log(hadError ? '[smoke] LAUNCH FAILED' : '[smoke] LAUNCH OK');
@@ -73,13 +77,26 @@ app.on('window-all-closed', () => {
 function ok(data) { return { ok: true, data }; }
 function fail(error, detail) { return { ok: false, error, detail }; }
 
+// Non-secret config exposed to the renderer (no PINs).
+function publicConfig() {
+  const c = config.load();
+  return {
+    clinic_name: c.clinic_name,
+    deployment_label: c.deployment_label,
+    patient_number_start: c.patient_number_start,
+    ui_language: c.ui_language || 'en',
+    report_language: c.report_language || 'es',
+    consent_language: c.consent_language || 'es'
+  };
+}
+
 function registerIpc() {
   // --- Auth / config ---
   ipcMain.handle('auth:login', (_e, { role, pin }) => config.authenticate(role, pin));
-  ipcMain.handle('config:get', () => {
-    const c = config.load();
-    return { clinic_name: c.clinic_name, deployment_label: c.deployment_label, patient_number_start: c.patient_number_start };
-  });
+  ipcMain.handle('config:get', () => publicConfig());
+  // Synchronous channel: the preload reads this during page load so the renderer
+  // can pick its UI language before any module evaluates (no flash, no async).
+  ipcMain.on('config:get-sync', (e) => { e.returnValue = publicConfig(); });
 
   // --- Master DB ---
   ipcMain.handle('db:nextNumber', () => ok(db.peekNextNumber()));

@@ -1,6 +1,6 @@
 /* Dentist station (spec 5.2). */
 import { h, mount, field, checkbox, toast, alertDialog, spinner } from '../util.js';
-import { T } from '../i18n/es.js';
+import { T } from '../i18n/index.js';
 import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, driveSelector } from '../components/shared.js';
 import { toothChart } from '../components/toothchart.js';
 

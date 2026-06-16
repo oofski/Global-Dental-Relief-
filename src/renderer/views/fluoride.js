@@ -1,6 +1,6 @@
 /* Fluoride station (spec 5.4) — OH3 + fluoride application. */
 import { h, mount, checkbox, alertDialog, spinner } from '../util.js';
-import { T } from '../i18n/es.js';
+import { T } from '../i18n/index.js';
 import { alertBanner, patientSummary, driveSelector } from '../components/shared.js';
 
 export function renderFluoride(container) {

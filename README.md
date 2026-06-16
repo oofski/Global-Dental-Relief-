@@ -83,9 +83,13 @@ Check-In ─► (USB) ─► Dentist ─► (USB) ─► Cleaning ─► (USB) �
 - **Tooth chart (§5.2, §6):** hybrid dentition — adult `1–32` + primary `a–t`,
   multi-select surfaces (`O M D B L F` → `DOB`…), treatment types, surgical
   (`extS`), "treating today" (underline), "complete" (slash).
-- **Spanish-only (§9):** every string lives in `src/renderer/i18n/es.js` (no
-  hardcoded text) so Phase 2 can add Khmer/Nepali/Tibetan/etc. Consent screen has
-  an offline **Spanish text-to-speech** reader and signature capture.
+- **Languages (§9):** the app **UI is English** by default; the **patient consent
+  form is Spanish**; and **generated reports/exports are Spanish** — all three are
+  independently configurable in `config.json` (`ui_language`, `consent_language`,
+  `report_language`). UI strings live in `src/renderer/i18n/{en,es}.js`, report
+  strings in `src/main/i18n.js` — no hardcoded text, so Phase 2 can add
+  Khmer/Nepali/Tibetan/etc. The consent screen has an offline **Spanish
+  text-to-speech** reader and signature capture.
 
 ---
 

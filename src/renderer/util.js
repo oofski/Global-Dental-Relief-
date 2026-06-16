@@ -1,5 +1,5 @@
 /* DOM + UI helpers for the renderer (vanilla, no framework). */
-import { T } from './i18n/es.js';
+import { T } from './i18n/index.js';
 
 export function h(tag, attrs = {}, children = []) {
   const el = document.createElement(tag);

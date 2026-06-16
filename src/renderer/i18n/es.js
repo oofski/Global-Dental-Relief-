@@ -1,10 +1,9 @@
 /*
- * Spanish language strings (Phase 1 — spec 9.1).
- * All display strings live here, never hardcoded in views, so Phase 2 can add
- * Khmer / Nepali / Tibetan / Guatemalan Spanish / Kenyan languages by swapping
- * this file.
+ * Spanish UI dictionary. All display strings live here, never hardcoded in
+ * views, so the active UI language can be swapped via i18n/index.js (and Phase 2
+ * can add Khmer / Nepali / Tibetan / Guatemalan Spanish / Kenyan languages).
  */
-export const T = {
+export const es = {
   app_title: 'GDR Clínica',
   by: 'Software Smiles',
   loading: 'Cargando…',
@@ -231,6 +230,7 @@ export const T = {
   admin_tools: 'Herramientas de administrador',
   print_summary: 'Imprimir resumen',
   total_patients_db: 'Pacientes en la base de datos',
+  report_lang_note: 'Los reportes se generan en: {lang}',
 
   // Misc
   station_locked: 'Esta estación no tiene acceso a esta función.',
@@ -238,4 +238,4 @@ export const T = {
   unsaved_warning: 'Hay cambios sin guardar. ¿Continuar?'
 };
 
-export default T;
+export default es;

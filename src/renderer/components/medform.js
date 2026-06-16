@@ -4,7 +4,7 @@
  * expand a text input when turned on. Mutates the passed `med` object in place.
  */
 import { h } from '../util.js';
-import { T } from '../i18n/es.js';
+import { T } from '../i18n/index.js';
 
 // [boolKey, label, textKey?]  — high-priority flags marked for styling.
 const FIELDS = [

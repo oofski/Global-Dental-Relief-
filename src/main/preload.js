@@ -13,7 +13,13 @@ const model = require('../shared/model');
 
 const invoke = (channel, payload) => ipcRenderer.invoke(channel, payload);
 
+// Read config synchronously at preload time so the renderer's i18n can pick the
+// UI language before any module evaluates (avoids a Spanish->English flash).
+let bootConfig = { ui_language: 'en', report_language: 'es', consent_language: 'es' };
+try { bootConfig = ipcRenderer.sendSync('config:get-sync') || bootConfig; } catch (_) { /* defaults */ }
+
 contextBridge.exposeInMainWorld('api', {
+  bootConfig,
   auth: {
     login: (role, pin) => invoke('auth:login', { role, pin })
   },

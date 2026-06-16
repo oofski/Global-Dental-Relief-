@@ -12,7 +12,7 @@
  * (today's-treatment list, etc.) refresh.
  */
 import { h, mount, modal } from '../util.js';
-import { T } from '../i18n/es.js';
+import { T } from '../i18n/index.js';
 
 const C = window.api.codes;
 
