@@ -4,6 +4,12 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.0.7 — 2026-06-16
+- Refreshed the app icon to a royal-blue mark that matches the new theme (the
+  previous teal icon clashed). This is a placeholder pending the official Global
+  Dental Relief logo file, which will replace it across the app icon, installer,
+  header, login, consent form, and report letterheads.
+
 ## v1.0.6 — 2026-06-16
 - Renamed the application to **Mexico Clinic - Global Dental Relief** (header,
   window title, login, and clinic-name default; existing installs auto-migrate).
