@@ -4,6 +4,15 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.1.0 — 2026-06-18
+- Added **Clear patients** — reset this computer's patient ledger to start a new
+  clinic day or deployment. Available to **front desk**, **checkout**, and
+  **admin** (not the clinical chair stations).
+- Safety: a backup of the master database is **exported automatically** before
+  wiping, and the operator must **type a confirmation keyword**. An optional
+  "reset patient numbering" starts a truly fresh ledger.
+- Server-side guard restricts the action to records-handling roles.
+
 ## v1.0.9 — 2026-06-16
 - The Check-In **medical-history form is now shown in the patient's language**
   (Spanish) — the parent/guardian reads and fills it in their native language,

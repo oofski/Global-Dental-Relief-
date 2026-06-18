@@ -339,6 +339,18 @@ export const es = {
   update_error_msg: 'No se pudo buscar actualizaciones.',
   updates_unavailable: 'La actualización automática solo está disponible en la app instalada (y requiere que el repositorio sea público).',
 
+  // Borrar pacientes / nuevo registro
+  clear_patients: 'Borrar pacientes',
+  clear_new_ledger_hint: 'Comenzar un nuevo día / registro',
+  clear_title: 'Borrar todos los pacientes',
+  clear_warn: 'Esto elimina permanentemente los {n} registros de pacientes en ESTA computadora. Primero se exporta una copia de seguridad, pero los registros de esta máquina no se podrán recuperar después.',
+  clear_reset_numbering: 'Reiniciar también la numeración de pacientes',
+  clear_type_confirm: 'Escriba {word} para confirmar',
+  clear_keyword: 'BORRAR',
+  clear_done: 'Se borraron {n} registros de pacientes. Copia de seguridad guardada en: {file}',
+  clear_mismatch: 'El texto de confirmación no coincide — no se borró nada.',
+  clear_nothing: 'No hay registros de pacientes para borrar.',
+
   // Misc
   station_locked: 'Esta estación no tiene acceso a esta función.',
   confirm_logout: '¿Cerrar sesión de esta estación?',

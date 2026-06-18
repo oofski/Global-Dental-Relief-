@@ -288,6 +288,24 @@ function exportMaster() {
   };
 }
 
+/**
+ * Clear all patient records on this machine (start a new ledger / clinic day).
+ * Destructive — callers MUST back up first (the IPC layer auto-exports a backup).
+ * opts.resetCounter resets patient numbering to config.patient_number_start.
+ */
+function clearAllPatients(opts) {
+  const s = load();
+  const removed = Object.keys(s.patients).length;
+  s.patients = {};
+  s.drives = {};
+  if (opts && opts.resetCounter) {
+    const start = (config.load().patient_number_start || 1) - 1;
+    s.counter = Math.max(0, start);
+  }
+  persist();
+  return { removed, counter: s.counter };
+}
+
 // For tests / reset
 function _reset() {
   store = blank();
@@ -307,6 +325,7 @@ module.exports = {
   searchPatients,
   summary,
   allPatients,
+  clearAllPatients,
   listNV,
   logDrive,
   listDrives,

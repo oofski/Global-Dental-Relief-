@@ -59,6 +59,7 @@ contextBridge.exposeInMainWorld('api', {
     listDrives: () => invoke('db:listDrives'),
     logDrive: (num, status, patientId) => invoke('db:logDrive', { num, status, patientId }),
     count: () => invoke('db:count'),
+    clearAll: (opts) => invoke('db:clearAll', opts),
     importMaster: () => invoke('db:importMaster')
   },
   drive: {

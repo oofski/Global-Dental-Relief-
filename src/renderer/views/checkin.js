@@ -2,6 +2,7 @@
 import { h, mount, field, checkbox, toast, alertDialog, fmtDate, spinner } from '../util.js';
 import { T, PT } from '../i18n/index.js';
 import { medForm } from '../components/medform.js';
+import { clearPatientsButton } from '../components/cleardata.js';
 import { signaturePad } from '../components/signature.js';
 import { tts } from '../components/tts.js';
 import { CONSENT_TITLE, CONSENT_DRAFT_NOTICE, CONSENT_PARAGRAPHS, consentSpeechText } from '../consent.js';
@@ -43,6 +44,10 @@ export function renderCheckin(container, ctx) {
           h('span', { class: 'choice-icon', text: '🔍' }),
           h('span', { text: T.existing_patient })
         ])
+      ]),
+      h('div', { class: 'danger-zone danger-zone-center' }, [
+        h('div', { class: 'danger-zone-label', text: T.clear_new_ledger_hint }),
+        clearPatientsButton(null, { small: true })
       ])
     ]);
   }

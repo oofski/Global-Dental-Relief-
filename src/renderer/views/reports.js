@@ -1,6 +1,7 @@
 /* Reports & export (spec 8). Admin (checkout) only. */
 import { h, mount, toast, alertDialog, spinner } from '../util.js';
 import { T, LANG_NAMES } from '../i18n/index.js';
+import { clearPatientsButton } from '../components/cleardata.js';
 
 export function renderReports(container, ctx) {
   const range = { from: '', to: '' };
@@ -84,7 +85,9 @@ export function renderReports(container, ctx) {
   }
 
   const countBadge = h('span', { class: 'count-badge', text: '…' });
-  window.api.db.count().then((r) => { if (r.ok) countBadge.textContent = String(r.data); });
+  function refreshCount() { window.api.db.count().then((r) => { if (r.ok) countBadge.textContent = String(r.data); }); }
+  refreshCount();
+  function afterClear() { refreshCount(); generate(); }
 
   mount(container, h('div', { class: 'view reports-view' }, [
     h('div', { class: 'view-head' }, [h('h2', { text: T.report_summary })]),
@@ -116,6 +119,10 @@ export function renderReports(container, ctx) {
         h('button', { class: 'btn btn-secondary', onClick: () => exportMaster('json') }, '⬇ ' + T.export_master_json),
         h('button', { class: 'btn btn-secondary', onClick: () => exportMaster('csv') }, '⬇ ' + T.export_master_csv),
         h('button', { class: 'btn btn-ghost', onClick: importMaster }, '⬆ ' + T.import_master)
+      ]),
+      h('div', { class: 'danger-zone' }, [
+        h('div', { class: 'danger-zone-label', text: T.clear_new_ledger_hint }),
+        clearPatientsButton(afterClear)
       ])
     ])
   ]));

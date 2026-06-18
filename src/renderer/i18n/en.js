@@ -340,6 +340,18 @@ export const en = {
   update_error_msg: 'Could not check for updates.',
   updates_unavailable: 'Auto-update is only available in the installed app (and needs the repository to be public).',
 
+  // Clear patients / new ledger
+  clear_patients: 'Clear patients',
+  clear_new_ledger_hint: 'Start a new day / ledger',
+  clear_title: 'Clear all patients',
+  clear_warn: 'This permanently deletes all {n} patient records on THIS computer. A backup is exported automatically first, but the records on this machine cannot be recovered afterward.',
+  clear_reset_numbering: 'Also reset patient numbering to start fresh',
+  clear_type_confirm: 'Type {word} to confirm',
+  clear_keyword: 'CLEAR',
+  clear_done: 'Cleared {n} patient records. Backup saved to: {file}',
+  clear_mismatch: 'Confirmation text did not match — nothing was deleted.',
+  clear_nothing: 'There are no patient records to clear.',
+
   // Misc
   station_locked: 'This station does not have access to this function.',
   confirm_logout: 'Log out of this station?',

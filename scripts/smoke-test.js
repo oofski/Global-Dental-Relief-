@@ -171,6 +171,15 @@ function ok(name) { pass++; console.log('  ✓', name); }
   assert.strictEqual(users.remove(adminUser.id).error, 'last_admin', 'cannot remove last admin');
   ok('user accounts: login, create, change password, last-admin guard');
 
+  // 13. Clear patients (new ledger) + reset numbering
+  const beforeClear = db.allPatients().length;
+  assert.ok(beforeClear > 0, 'there are patients to clear');
+  const cleared = db.clearAllPatients({ resetCounter: true });
+  assert.strictEqual(cleared.removed, beforeClear, 'all patients removed');
+  assert.strictEqual(db.allPatients().length, 0, 'ledger is empty');
+  assert.strictEqual(db.peekNextNumber(), 1, 'numbering reset to start');
+  ok('clear patients wipes ledger + resets numbering (1.1.0)');
+
   console.log(`\nAll ${pass} checks passed ✅`);
   console.log('Data dir:', require('../src/main/paths').base());
 })().catch((e) => { console.error('\n✗ SMOKE TEST FAILED:\n', e); process.exit(1); });

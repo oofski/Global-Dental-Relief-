@@ -77,6 +77,8 @@ function createWindow() {
             console.log('[smoke] brand title:', JSON.stringify(brand));
             console.log('[smoke] drive label:', JSON.stringify(driveLabel));
             console.log('[smoke] tabs:', JSON.stringify(tabs));
+            const clearBtns = await mainWindow.webContents.executeJavaScript("document.querySelectorAll('.danger-zone .btn-danger').length");
+            console.log('[smoke] clear-ledger buttons visible:', clearBtns);
             if (!roleChip) hadError = true;
             // If a Settings tab exists (admin), open it -> Accounts section -> verify seeded accounts.
             const hasSettings = await mainWindow.webContents.executeJavaScript("!!Array.from(document.querySelectorAll('.tab')).find(t=>t.textContent.includes('Settings'))");
@@ -210,6 +212,8 @@ function publicConfig() {
 }
 
 function requireAdmin() { return !!(session && session.manage_users); }
+// Roles that manage the patient ledger (front desk, checkout, admin).
+function requireRecordsAccess() { return !!(session && ['check_in', 'checkout', 'admin'].includes(session.role)); }
 
 function registerIpc() {
   // --- Auth / session ---
@@ -283,6 +287,17 @@ function registerIpc() {
   ipcMain.handle('db:listDrives', () => ok(db.listDrives()));
   ipcMain.handle('db:logDrive', (_e, { num, status, patientId }) => ok(db.logDrive(num, status, patientId)));
   ipcMain.handle('db:count', () => ok(db.allPatients().length));
+  // Clear the patient ledger (front desk / checkout / admin). Auto-backs up first.
+  ipcMain.handle('db:clearAll', (_e, opts) => {
+    if (!requireRecordsAccess()) return fail('forbidden');
+    try {
+      const before = db.allPatients().length;
+      let backupFile = null;
+      if (before > 0) { try { backupFile = reports.exportMasterJSON(); } catch (_) { /* best-effort */ } }
+      const res = db.clearAllPatients(opts || {});
+      return ok({ removed: res.removed, counter: res.counter, backupFile });
+    } catch (e) { return fail('clear_failed', String(e.message || e)); }
+  });
 
   // --- Flash drive ---
   ipcMain.handle('drive:list', async () => ok(await drive.listDrives()));

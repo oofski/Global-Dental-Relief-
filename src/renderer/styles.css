@@ -362,6 +362,12 @@ h1,h2,h3{letter-spacing:-.01em}
 .spinner-dot{width:21px;height:21px;border:3px solid var(--line-2);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* clear-ledger ("danger zone") */
+.danger-zone{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.danger-zone-center{justify-content:center;flex-direction:column;gap:8px;text-align:center;border-top:none;margin-top:40px}
+.danger-zone-label{font-size:12.5px;color:var(--muted);font-weight:600}
+.clear-flow .clear-opt{margin:14px 0}
+
 .big-checks .checkbox{font-size:17px;padding:14px 0}
 .order-line{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .done-line{color:var(--green);font-weight:700}
