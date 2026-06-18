@@ -4,6 +4,16 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.1.2 — 2026-06-18
+- The Checkout "ending form" Care checklist is now **interactive**: the operator
+  can tick off **cleaning completed, fluoride completed, and OH1/OH2/OH3** directly
+  on the final form to confirm or correct anything missed upstream. These marks
+  upload to the master database.
+- Visit history now shows each visit's **cleaning / fluoride / OH** status so
+  prior visits read correctly everywhere they appear.
+- (Analysis confirmed the station-to-checkout data flow itself was already
+  correct; the gap was that the ending form was read-only.)
+
 ## v1.1.1 — 2026-06-18
 - **Cleaning & Fluoride stations** now show full patient context: medical history,
   the treatment the doctor charted this visit, and visit history.

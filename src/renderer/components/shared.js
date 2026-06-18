@@ -1,5 +1,5 @@
 /* Reusable clinical UI pieces shared across stations. */
-import { h, fmtDate, fmtDateTime, toast, spinner, mount } from '../util.js';
+import { h, fmtDate, fmtDateTime, toast, spinner, mount, checkbox } from '../util.js';
 import { T } from '../i18n/index.js';
 
 const C = window.api.codes;
@@ -88,6 +88,12 @@ export function visitHistoryPanel(patient) {
   } else {
     visits.forEach((v) => {
       const codesStr = (v.treatment_items || []).map((t) => C.formatItem(t) + (t.complete ? '/' : '')).join('  ');
+      const flags = [];
+      if (v.cleaning_type && v.cleaning_type !== 'None') flags.push(`${T.cl_word} ${v.cleaning_type}${v.cleaning_done ? ' ✓' : ''}`);
+      if (v.fluoride_done) flags.push('FL ✓');
+      if (v.oh1_done) flags.push('OH1 ✓');
+      if (v.oh2_done) flags.push('OH2 ✓');
+      if (v.oh3_done) flags.push('OH3 ✓');
       body.appendChild(h('div', { class: 'visit-line' }, [
         h('div', { class: 'visit-line-head' }, [
           h('strong', { text: fmtDate(v.visit_date) }),
@@ -96,6 +102,7 @@ export function visitHistoryPanel(patient) {
           v.clinician_initials ? h('span', { class: 'muted', text: `${v.clinician_type || ''} ${v.clinician_initials}` }) : null
         ]),
         codesStr ? h('div', { class: 'visit-codes', text: codesStr }) : null,
+        flags.length ? h('div', { class: 'visit-flags' }, flags.map((f) => h('span', { class: 'tag', text: f }))) : null,
         v.treatment_notes ? h('div', { class: 'visit-notes', text: v.treatment_notes }) : null
       ]));
     });
@@ -128,26 +135,61 @@ export function treatmentDonePanel(visit, { open = false } = {}) {
 }
 
 // ---- Care checklist: recommended vs completed (cleaning / fluoride / OH) ----
-export function careChecklist(visit) {
+// editable:true (checkout "ending form") shows checkboxes the operator can mark;
+// otherwise read-only pills. Marks mutate the visit (uploaded to the master DB).
+export function careChecklist(visit, { editable = false } = {}) {
   const v = visit || {};
   const pill = (label, on, kind) => h('span', { class: 'cc-pill ' + (on ? (kind || 'cc-on') : 'cc-off'), text: `${label}: ${on ? '✓' : '—'}` });
-  const ohPill = (label, done) => h('span', { class: 'cc-pill ' + (done ? 'cc-done' : 'cc-off'), text: `${label} ${done ? '✓' : '—'}` });
   const cleaningRec = v.cleaning_type === 'P' || v.cleaning_type === 'D';
   const clLabel = T.cl_word + (cleaningRec ? ` (${v.cleaning_type})` : '');
-  return h('div', { class: 'care-checklist' }, [
+  const now = () => window.api.model.nowISO();
+
+  if (!editable) {
+    const ohPill = (label, done) => h('span', { class: 'cc-pill ' + (done ? 'cc-done' : 'cc-off'), text: `${label} ${done ? '✓' : '—'}` });
+    return h('div', { class: 'care-checklist' }, [
+      h('div', { class: 'cc-row' }, [
+        h('span', { class: 'cc-label', text: clLabel }),
+        pill(T.recommended, cleaningRec),
+        pill(T.completed_label, !!v.cleaning_done, 'cc-done')
+      ]),
+      h('div', { class: 'cc-row' }, [
+        h('span', { class: 'cc-label', text: T.fl_word }),
+        pill(T.recommended, v.fluoride_recommended !== false),
+        pill(T.completed_label, !!v.fluoride_done, 'cc-done')
+      ]),
+      h('div', { class: 'cc-row' }, [
+        h('span', { class: 'cc-label', text: 'OH' }),
+        ohPill('OH1', !!v.oh1_done), ohPill('OH2', !!v.oh2_done), ohPill('OH3', !!v.oh3_done)
+      ])
+    ]);
+  }
+
+  // Editable (checkout): tick off anything missed upstream.
+  const cleaningDone = checkbox(T.completed_label, !!v.cleaning_done, (val) => {
+    v.cleaning_done = val;
+    if (val) { v.cleaning_done_at = v.cleaning_done_at || now(); if (v.station_status) v.station_status.cleaning = true; }
+  });
+  const fluorideDone = checkbox(T.completed_label, !!v.fluoride_done, (val) => {
+    v.fluoride_done = val;
+    v.fluoride_done_at = val ? (v.fluoride_done_at || now()) : null;
+    if (val && v.station_status) v.station_status.fluoride = true;
+  });
+  const oh = (label, key) => checkbox(label, !!v[key], (val) => { v[key] = val; });
+
+  return h('div', { class: 'care-checklist care-checklist-edit' }, [
     h('div', { class: 'cc-row' }, [
       h('span', { class: 'cc-label', text: clLabel }),
       pill(T.recommended, cleaningRec),
-      pill(T.completed_label, !!v.cleaning_done, 'cc-done')
+      cleaningDone
     ]),
     h('div', { class: 'cc-row' }, [
       h('span', { class: 'cc-label', text: T.fl_word }),
       pill(T.recommended, v.fluoride_recommended !== false),
-      pill(T.completed_label, !!v.fluoride_done, 'cc-done')
+      fluorideDone
     ]),
     h('div', { class: 'cc-row' }, [
       h('span', { class: 'cc-label', text: 'OH' }),
-      ohPill('OH1', !!v.oh1_done), ohPill('OH2', !!v.oh2_done), ohPill('OH3', !!v.oh3_done)
+      oh('OH1', 'oh1_done'), oh('OH2', 'oh2_done'), oh('OH3', 'oh3_done')
     ])
   ]);
 }

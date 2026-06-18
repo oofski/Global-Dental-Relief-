@@ -263,6 +263,9 @@ h1,h2,h3{letter-spacing:-.01em}
 .cc-pill.cc-done{background:var(--green-soft);border-color:#bfe6cb;color:var(--green)}
 .cc-pill.cc-off{background:#f4f6fa;color:var(--muted)}
 .care-rec-row{margin:8px 0}
+.care-checklist-edit .cc-row{gap:14px}
+.care-checklist-edit .checkbox{padding:2px 0}
+.visit-flags{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
 
 /* tooth editor modal */
 .tooth-editor{min-width:420px;max-width:560px}

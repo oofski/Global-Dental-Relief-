@@ -129,6 +129,19 @@ function createWindow() {
               if (panels.length < 2) hadError = true;
             }
 
+            // Checkout "ending form": load sim drive, confirm the care checklist
+            // is interactive (OH / cleaning / fluoride checkboxes) and toggles.
+            if (process.env.GDR_SMOKE_CHECKOUT) {
+              const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+              await mainWindow.webContents.executeJavaScript("var c=document.querySelector('.drive-chip.sim'); if(c) c.click();"); await wait(800);
+              const boxes = await mainWindow.webContents.executeJavaScript("document.querySelectorAll('.care-checklist input[type=checkbox]').length");
+              await mainWindow.webContents.executeJavaScript("var b=document.querySelector('.care-checklist input[type=checkbox]'); if(b) b.click();"); await wait(150);
+              const firstChecked = await mainWindow.webContents.executeJavaScript("(document.querySelector('.care-checklist input[type=checkbox]')||{}).checked");
+              console.log('[smoke] care-checklist checkboxes:', boxes);
+              console.log('[smoke] first checkbox toggled to:', firstChecked);
+              if (boxes < 5) hadError = true;
+            }
+
             // Dentist chart: load sim drive, check layout dropdown + health mode.
             if (process.env.GDR_SMOKE_DENTIST) {
               const wait = (ms) => new Promise((r) => setTimeout(r, ms));

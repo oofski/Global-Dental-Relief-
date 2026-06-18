@@ -125,7 +125,7 @@ export function renderCheckout(container, ctx) {
 
       h('div', { class: 'card' }, [
         h('h3', { class: 'card-title', text: T.care_checklist }),
-        careChecklist(visit)
+        careChecklist(visit, { editable: true })
       ]),
 
       priorPending.length ? h('div', { class: 'pending-box' }, [
