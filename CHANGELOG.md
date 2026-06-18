@@ -4,6 +4,13 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.0.9 — 2026-06-16
+- The Check-In **medical-history form is now shown in the patient's language**
+  (Spanish) — the parent/guardian reads and fills it in their native language,
+  while the rest of the staff interface stays English. Driven by
+  `consent_language` (configurable in Settings → Clinic).
+- The dentist's read-only medical summary remains in the staff (English) language.
+
 ## v1.0.7 — 2026-06-16
 - Refreshed the app icon to a royal-blue mark that matches the new theme (the
   previous teal icon clashed). This is a placeholder pending the official Global

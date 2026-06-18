@@ -20,6 +20,13 @@ const requested = boot.ui_language || 'en';
 export const UI_LANG = DICTS[requested] ? requested : 'en';
 export const T = DICTS[UI_LANG];
 
+// Patient-facing language (forms the patient/parent reads & fills: consent,
+// medical history). Driven by config.consent_language (default Spanish),
+// independent of the staff UI language.
+const patientReq = boot.consent_language || 'es';
+export const PATIENT_LANG = DICTS[patientReq] ? patientReq : 'es';
+export const PT = DICTS[PATIENT_LANG];
+
 // Human-readable language names for small UI notes.
 export const LANG_NAMES = { en: 'English', es: 'Español' };
 

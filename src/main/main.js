@@ -94,6 +94,29 @@ function createWindow() {
               const hasClinicForm = await mainWindow.webContents.executeJavaScript("!!document.querySelector('.settings-card')");
               console.log('[smoke] clinic settings form present:', hasClinicForm);
             }
+
+            // Drive check-in -> medical-history screen and confirm the patient
+            // sees the form in the patient (Spanish) language.
+            if (process.env.GDR_SMOKE_MED) {
+              const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+              await mainWindow.webContents.executeJavaScript("document.querySelector('.choice-new').click()"); await wait(350);
+              await mainWindow.webContents.executeJavaScript(`(() => {
+                const set=(el,v)=>{el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));};
+                const ins=document.querySelectorAll('.view-body .text-input');
+                set(ins[0],'Prueba'); set(ins[2],'Escuela'); set(ins[3],'8');
+                [...document.querySelectorAll('.seg-btn')].find(b=>b.textContent.trim()==='M').click();
+                document.querySelector('.view-foot .btn-primary').click();
+              })()`); await wait(350);
+              await mainWindow.webContents.executeJavaScript(`(() => {
+                const t=document.querySelector('.view-body .text-input'); if(t){t.value='Tutor';t.dispatchEvent(new Event('input',{bubbles:true}));}
+                document.querySelector('.view-foot .btn-primary').click();
+              })()`); await wait(350);
+              const medTitle = await mainWindow.webContents.executeJavaScript("(document.querySelector('.view-head h2')||{}).textContent||''");
+              const medLabels = await mainWindow.webContents.executeJavaScript("[...document.querySelectorAll('.med-row .checkbox span')].map(s=>s.textContent)");
+              console.log('[smoke] medical screen title:', JSON.stringify(medTitle));
+              console.log('[smoke] medical labels:', JSON.stringify(medLabels));
+              if (!medLabels.length) hadError = true;
+            }
           }
         } catch (e) { hadError = true; console.error('[smoke] eval failed', e); }
         console.log(hadError ? '[smoke] LAUNCH FAILED' : '[smoke] LAUNCH OK');

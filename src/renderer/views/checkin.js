@@ -1,6 +1,6 @@
 /* Check-In station (spec 5.1, 7.1, 7.2). */
 import { h, mount, field, checkbox, toast, alertDialog, fmtDate, spinner } from '../util.js';
-import { T } from '../i18n/index.js';
+import { T, PT } from '../i18n/index.js';
 import { medForm } from '../components/medform.js';
 import { signaturePad } from '../components/signature.js';
 import { tts } from '../components/tts.js';
@@ -136,15 +136,15 @@ export function renderCheckin(container, ctx) {
     ]);
   }
 
-  // ---- Screen D: Medical history ----
+  // ---- Screen D: Medical history (PATIENT-FACING -> patient language) ----
   function screenMedical() {
     const form = medForm(W.med);
-    shell(T.medical_history, [
-      W.mode === 'returning' ? h('div', { class: 'info-banner', text: T.med_anything_changed }) : null,
+    shell(PT.medical_history, [
+      W.mode === 'returning' ? h('div', { class: 'info-banner', text: PT.med_anything_changed }) : null,
       form
     ], [
-      h('button', { class: 'btn btn-ghost', onClick: () => W.mode === 'new' ? screenConsent() : screenSearch() }, T.back),
-      h('button', { class: 'btn btn-primary', onClick: screenDrive }, T.next)
+      h('button', { class: 'btn btn-ghost', onClick: () => W.mode === 'new' ? screenConsent() : screenSearch() }, PT.back),
+      h('button', { class: 'btn btn-primary', onClick: screenDrive }, PT.next)
     ]);
   }
 
