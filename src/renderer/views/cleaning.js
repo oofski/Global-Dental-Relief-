@@ -1,7 +1,8 @@
-/* Cleaning station (spec 5.3) — single-purpose. */
+/* Cleaning station (spec 5.3) — single-purpose, with full patient context (#1). */
 import { h, mount, checkbox, toast, alertDialog, fmtDateTime, spinner } from '../util.js';
 import { T } from '../i18n/index.js';
-import { alertBanner, patientSummary, driveSelector } from '../components/shared.js';
+import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, treatmentDonePanel } from '../components/shared.js';
+import { driveSelector } from '../components/shared.js';
 
 export function renderCleaning(container) {
   function screenLoad() {
@@ -35,7 +36,6 @@ export function renderCleaning(container) {
       const ordered = visit && visit.cleaning_type && visit.cleaning_type !== 'None';
       const typeLabel = visit && visit.cleaning_type === 'P' ? T.cleaning_prophy
         : visit && visit.cleaning_type === 'D' ? T.cleaning_debride : T.cleaning_none;
-
       const oh2 = checkbox(T.oh2_label, visit && visit.oh2_done, (v) => { if (visit) visit.oh2_done = v; });
 
       mount(container, h('div', { class: 'view cleaning-view' }, [
@@ -45,6 +45,8 @@ export function renderCleaning(container) {
         ]),
         alertBanner(patient),
         patientSummary(patient),
+        h('div', { class: 'panels-row' }, [medicalPanel(patient), treatmentDonePanel(visit, { open: true })]),
+        visitHistoryPanel(patient),
         !ordered
           ? h('div', { class: 'big-info', text: T.no_cleaning_ordered })
           : h('div', { class: 'card' }, [

@@ -339,6 +339,31 @@ export const es = {
   update_error_msg: 'No se pudo buscar actualizaciones.',
   updates_unavailable: 'La actualización automática solo está disponible en la app instalada (y requiere que el repositorio sea público).',
 
+  // Diagrama dental — vista, tamizaje de salud, notas automáticas (v1.1.1)
+  chart_view_label: 'Diagrama',
+  view_hybrid: 'Híbrido (mixto)',
+  view_adult: 'Adulto (1–32)',
+  view_primary: 'Primario (a–t)',
+  chart_mode_treatment: 'Tratamiento',
+  chart_mode_health: 'Estado de salud',
+  chart_health_hint: 'Haga clic en un diente para alternar: verde = sano, amarillo = vigilar, rojo = necesita atención.',
+  cond_healthy: 'Sano',
+  cond_watch: 'Vigilar',
+  cond_urgent: 'Necesita atención',
+  treatment_notes_auto: 'Generado automáticamente desde el diagrama (puede editarlo).',
+  tx_this_visit: 'Tratamiento de esta visita',
+  patient_health_treatment: 'Salud y tratamiento del paciente',
+  fluoride_recommended_label: 'Flúor recomendado',
+
+  // Lista de cuidados (recomendado vs completado)
+  care_checklist: 'Lista de cuidados',
+  recommended: 'Recomendado',
+  completed_label: 'Completado',
+  cl_word: 'Limpieza',
+  fl_word: 'Flúor',
+  rpt_cleaning_recommended: 'Limpiezas recomendadas',
+  rpt_fluoride_recommended: 'Flúor recomendado',
+
   // Borrar pacientes / nuevo registro
   clear_patients: 'Borrar pacientes',
   clear_new_ledger_hint: 'Comenzar un nuevo día / registro',

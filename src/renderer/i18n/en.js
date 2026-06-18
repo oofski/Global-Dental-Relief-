@@ -340,6 +340,31 @@ export const en = {
   update_error_msg: 'Could not check for updates.',
   updates_unavailable: 'Auto-update is only available in the installed app (and needs the repository to be public).',
 
+  // Tooth chart — layout, health screening, auto notes (v1.1.1)
+  chart_view_label: 'Chart',
+  view_hybrid: 'Hybrid (mixed)',
+  view_adult: 'Adult (1–32)',
+  view_primary: 'Primary (a–t)',
+  chart_mode_treatment: 'Treatment',
+  chart_mode_health: 'Health status',
+  chart_health_hint: 'Click a tooth to cycle: green = healthy, yellow = watch, red = needs care.',
+  cond_healthy: 'Healthy',
+  cond_watch: 'Watch',
+  cond_urgent: 'Needs care',
+  treatment_notes_auto: 'Auto-filled from the tooth chart (you can still edit).',
+  tx_this_visit: 'Treatment this visit',
+  patient_health_treatment: 'Patient health & treatment',
+  fluoride_recommended_label: 'Fluoride recommended',
+
+  // Care checklist (recommended vs completed)
+  care_checklist: 'Care checklist',
+  recommended: 'Recommended',
+  completed_label: 'Completed',
+  cl_word: 'Cleaning',
+  fl_word: 'Fluoride',
+  rpt_cleaning_recommended: 'Cleanings recommended',
+  rpt_fluoride_recommended: 'Fluoride recommended',
+
   // Clear patients / new ledger
   clear_patients: 'Clear patients',
   clear_new_ledger_hint: 'Start a new day / ledger',

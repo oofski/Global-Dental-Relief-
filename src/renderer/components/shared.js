@@ -104,6 +104,54 @@ export function visitHistoryPanel(patient) {
   return details;
 }
 
+// ---- "Treatment this visit" panel (what the doctor charted) ----
+export function treatmentDonePanel(visit, { open = false } = {}) {
+  const details = h('details', { class: 'panel' });
+  if (open) details.setAttribute('open', '');
+  const items = (visit && visit.treatment_items) || [];
+  details.appendChild(h('summary', { text: `${T.tx_this_visit} (${items.length})` }));
+  const body = h('div', { class: 'panel-body' });
+  if (!visit) {
+    body.appendChild(h('div', { class: 'muted', text: '—' }));
+  } else {
+    body.appendChild(h('div', { class: 'muted', text: `${T.exam_type}: ${visit.exam_type || '—'} · ${visit.clinician_type || ''} ${visit.clinician_initials || ''}`.trim() }));
+    if (items.length) {
+      body.appendChild(h('div', { class: 'pending-list' }, items.map((t) =>
+        h('span', { class: 'code-chip' + (t.complete ? ' done' : ''), text: C.formatItem(t) }))));
+    } else {
+      body.appendChild(h('div', { class: 'muted', text: visit.nt_status ? 'NT' : '—' }));
+    }
+    if (visit.treatment_notes) body.appendChild(h('div', { class: 'visit-notes', text: visit.treatment_notes }));
+  }
+  details.appendChild(body);
+  return details;
+}
+
+// ---- Care checklist: recommended vs completed (cleaning / fluoride / OH) ----
+export function careChecklist(visit) {
+  const v = visit || {};
+  const pill = (label, on, kind) => h('span', { class: 'cc-pill ' + (on ? (kind || 'cc-on') : 'cc-off'), text: `${label}: ${on ? '✓' : '—'}` });
+  const ohPill = (label, done) => h('span', { class: 'cc-pill ' + (done ? 'cc-done' : 'cc-off'), text: `${label} ${done ? '✓' : '—'}` });
+  const cleaningRec = v.cleaning_type === 'P' || v.cleaning_type === 'D';
+  const clLabel = T.cl_word + (cleaningRec ? ` (${v.cleaning_type})` : '');
+  return h('div', { class: 'care-checklist' }, [
+    h('div', { class: 'cc-row' }, [
+      h('span', { class: 'cc-label', text: clLabel }),
+      pill(T.recommended, cleaningRec),
+      pill(T.completed_label, !!v.cleaning_done, 'cc-done')
+    ]),
+    h('div', { class: 'cc-row' }, [
+      h('span', { class: 'cc-label', text: T.fl_word }),
+      pill(T.recommended, v.fluoride_recommended !== false),
+      pill(T.completed_label, !!v.fluoride_done, 'cc-done')
+    ]),
+    h('div', { class: 'cc-row' }, [
+      h('span', { class: 'cc-label', text: 'OH' }),
+      ohPill('OH1', !!v.oh1_done), ohPill('OH2', !!v.oh2_done), ohPill('OH3', !!v.oh3_done)
+    ])
+  ]);
+}
+
 // ---- Drive selector ----
 // onLoaded(patient, drivePath) for read stations; onSelected(drivePath) for write.
 export function driveSelector({ mode = 'read', onLoaded, onSelected } = {}) {

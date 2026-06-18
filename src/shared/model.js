@@ -91,8 +91,11 @@ function newVisit(patient) {
     clinician_initials: '',
     nt_status: false,
     treatment_items: [],        // [{ tooth, surfaces[], treatment_type, surgical, treating_today, complete }]
+    tooth_conditions: {},       // { '<tooth>': 'healthy' | 'watch' | 'urgent' } quick screening
+    chart_view: 'hybrid',       // 'hybrid' | 'adult' | 'primary'
     treatment_notes: '',
-    cleaning_type: 'None',      // 'P' | 'D' | 'None'
+    cleaning_type: 'None',      // 'P' | 'D' | 'None'  (clinician recommendation)
+    fluoride_recommended: true, // standard of care unless a heavy extraction
     cleaning_done: false,
     cleaning_done_at: null,
     oh1_done: false,

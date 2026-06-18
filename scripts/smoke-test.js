@@ -132,6 +132,8 @@ function ok(name) { pass++; console.log('  ✓', name); }
   assert.strictEqual(get('oh_lessons'), 3, 'OH1+OH2+OH3');
   assert.strictEqual(get('total_patients'), 1, 'one checked-out patient');
   assert.strictEqual(get('nv_patients'), 1, 'one NV');
+  assert.strictEqual(get('cleaning_recommended'), 1, 'one cleaning recommended (1.1.1)');
+  assert.strictEqual(get('fluoride_recommended'), 1, 'one fluoride recommended (1.1.1)');
   ok('treatment summary counts are correct (8.1)');
 
   // 10. Exports

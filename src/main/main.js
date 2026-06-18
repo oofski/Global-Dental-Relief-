@@ -119,6 +119,33 @@ function createWindow() {
               console.log('[smoke] medical labels:', JSON.stringify(medLabels));
               if (!medLabels.length) hadError = true;
             }
+
+            // Read station: load sim drive, confirm patient-context panels render.
+            if (process.env.GDR_SMOKE_LOADSIM) {
+              const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+              await mainWindow.webContents.executeJavaScript("var c=document.querySelector('.drive-chip.sim'); if(c) c.click();"); await wait(800);
+              const panels = await mainWindow.webContents.executeJavaScript("[...document.querySelectorAll('.panel summary')].map(s=>s.textContent)");
+              console.log('[smoke] context panels:', JSON.stringify(panels));
+              if (panels.length < 2) hadError = true;
+            }
+
+            // Dentist chart: load sim drive, check layout dropdown + health mode.
+            if (process.env.GDR_SMOKE_DENTIST) {
+              const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+              await mainWindow.webContents.executeJavaScript("var c=document.querySelector('.drive-chip.sim'); if(c) c.click();"); await wait(800);
+              const views = await mainWindow.webContents.executeJavaScript("[...document.querySelectorAll('.chart-view-select option')].map(o=>o.textContent)");
+              const teeth = await mainWindow.webContents.executeJavaScript("document.querySelectorAll('.tooth').length");
+              console.log('[smoke] chart layouts:', JSON.stringify(views));
+              console.log('[smoke] teeth (hybrid):', teeth);
+              await mainWindow.webContents.executeJavaScript("var s=document.querySelector('.chart-view-select'); s.value='adult'; s.dispatchEvent(new Event('change',{bubbles:true}));"); await wait(300);
+              const adultTeeth = await mainWindow.webContents.executeJavaScript("document.querySelectorAll('.tooth').length");
+              console.log('[smoke] teeth (adult only):', adultTeeth);
+              await mainWindow.webContents.executeJavaScript("var b=[...document.querySelectorAll('.chart-toolbar .seg-btn')].find(x=>/Health|salud/i.test(x.textContent)); if(b) b.click();"); await wait(200);
+              await mainWindow.webContents.executeJavaScript("var t=document.querySelector('.tooth'); if(t){t.click();t.click();}"); await wait(200);
+              const tinted = await mainWindow.webContents.executeJavaScript("document.querySelectorAll('.tooth.cond-healthy,.tooth.cond-watch,.tooth.cond-urgent').length");
+              console.log('[smoke] health-tinted teeth after 2 clicks:', tinted);
+              if (!teeth || !views.length) hadError = true;
+            }
           }
         } catch (e) { hadError = true; console.error('[smoke] eval failed', e); }
         console.log(hadError ? '[smoke] LAUNCH FAILED' : '[smoke] LAUNCH OK');

@@ -4,6 +4,21 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.1.1 — 2026-06-18
+- **Cleaning & Fluoride stations** now show full patient context: medical history,
+  the treatment the doctor charted this visit, and visit history.
+- **Treatment notes auto-fill** from the tooth chart as the doctor marks teeth
+  (still editable) — no more retyping codes.
+- **Tooth chart health screening:** a "Health status" mode to quickly mark teeth
+  green (healthy) / yellow (watch) / red (needs care), layered under the existing
+  treatment colours.
+- **Tooth chart layout dropdown:** Hybrid (mixed), Full adult (1–32), or Full
+  primary (a–t).
+- **Cleaning & fluoride tracking** is now explicit everywhere: the doctor can
+  recommend fluoride (and cleaning), and Checkout/Admin show a Care checklist of
+  Recommended vs Completed for cleaning, fluoride, and OH1/OH2/OH3. Reports add
+  "Cleanings recommended" and "Fluoride recommended" counts.
+
 ## v1.1.0 — 2026-06-18
 - Added **Clear patients** — reset this computer's patient ledger to start a new
   clinic day or deployment. Available to **front desk**, **checkout**, and

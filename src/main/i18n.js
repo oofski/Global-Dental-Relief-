@@ -33,7 +33,9 @@ const STRINGS = {
       sdf: 'Aplicaciones de SDF',
       cleaning_prophy: 'Limpiezas estándar (Profilaxis)',
       cleaning_debride: 'Limpiezas profundas (Debridamiento)',
+      cleaning_recommended: 'Limpiezas recomendadas',
       fluoride: 'Aplicaciones de flúor',
+      fluoride_recommended: 'Flúor recomendado',
       oh_lessons: 'Lecciones de salud bucal impartidas',
       total_patients: 'Total de pacientes atendidos',
       nv_patients: 'Pacientes con próxima visita (NV)'
@@ -64,7 +66,9 @@ const STRINGS = {
       sdf: 'SDF applications',
       cleaning_prophy: 'Standard cleanings (Prophy)',
       cleaning_debride: 'Deep cleanings (Debridement)',
+      cleaning_recommended: 'Cleanings recommended',
       fluoride: 'Fluoride applications',
+      fluoride_recommended: 'Fluoride recommended',
       oh_lessons: 'Oral health lessons given',
       total_patients: 'Total patients seen',
       nv_patients: 'Next-visit (NV) patients'

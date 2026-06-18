@@ -44,7 +44,14 @@ export function renderDentist(container, ctx) {
       }));
     }
 
-    const chart = toothChart(visit, { onChange: refreshToday });
+    // Auto-fill treatment notes from the tooth chart (#2) — still editable.
+    let notesEl = null;
+    function regenNotes() {
+      visit.treatment_notes = (visit.treatment_items || [])
+        .map((t) => window.api.codes.formatItem(t)).filter(Boolean).join(', ');
+      if (notesEl) notesEl.value = visit.treatment_notes;
+    }
+    const chart = toothChart(visit, { onChange: () => { refreshToday(); regenNotes(); } });
 
     // Exam type
     const examSeg = h('div', { class: 'seg' }, [
@@ -71,10 +78,15 @@ export function renderDentist(container, ctx) {
       h('button', { class: 'seg-btn' + (!visit.cleaning_type || visit.cleaning_type === 'None' ? ' active' : ''), onClick: (e) => { visit.cleaning_type = 'None'; toggle(cleanSeg, e); } }, T.cleaning_none)
     ]);
 
-    // Treatment notes (free text codes)
+    // Treatment notes — auto-filled from the chart (#2), still editable.
     const notes = h('textarea', { class: 'textarea', rows: '2', placeholder: T.treatment_notes_hint });
     notes.value = visit.treatment_notes || '';
     notes.addEventListener('input', () => { visit.treatment_notes = notes.value; });
+    notesEl = notes;
+    if (!visit.treatment_notes && (visit.treatment_items || []).length) regenNotes();
+
+    // Fluoride recommended (#5) — clinician order; executed at the fluoride station.
+    const flRec = checkbox(T.fluoride_recommended_label, visit.fluoride_recommended !== false, (v) => { visit.fluoride_recommended = v; });
 
     // OH2
     const oh2 = checkbox(T.oh2_label, visit.oh2_done, (v) => { visit.oh2_done = v; });
@@ -128,7 +140,8 @@ export function renderDentist(container, ctx) {
           h('div', { class: 'field-hint', text: T.nt_hint })
         ]),
         field(T.cleaning_order, cleanSeg),
-        field(T.treatment_notes, notes, { hint: T.treatment_notes_hint })
+        h('div', { class: 'care-rec-row' }, [flRec]),
+        field(T.treatment_notes, notes, { hint: T.treatment_notes_auto })
       ]),
 
       h('div', { class: 'card' }, [

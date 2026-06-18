@@ -1,7 +1,7 @@
 /* Checkout / Master station (spec 5.5, 7.3). Admin role. */
 import { h, mount, toast, alertDialog, confirmDialog, fmtDate, fmtDateTime, timeSince, spinner } from '../util.js';
 import { T } from '../i18n/index.js';
-import { alertBanner, patientSummary, visitHistoryPanel, driveSelector } from '../components/shared.js';
+import { alertBanner, patientSummary, visitHistoryPanel, driveSelector, careChecklist } from '../components/shared.js';
 import { renderReports } from './reports.js';
 import { renderSettings } from './settings.js';
 
@@ -119,15 +119,13 @@ export function renderCheckout(container, ctx) {
         h('h3', { class: 'card-title', text: T.treatment_plan }),
         h('div', { class: 'visit-detail' }, [
           h('div', { text: `${T.exam_type}: ${visit ? (visit.exam_type || '—') : '—'} · ${visit ? (visit.clinician_type || '') : ''} ${visit ? (visit.clinician_initials || '') : ''}` }),
-          codes.length ? h('div', { class: 'pending-list' }, codes) : h('div', { class: 'muted', text: '—' }),
-          h('div', { class: 'tags-line' }, [
-            tag(`${T.cleaning_order}: ${visit ? (visit.cleaning_type || 'None') : 'None'}${visit && visit.cleaning_done ? ' ✓' : ''}`),
-            tag(`OH1 ${visit && visit.oh1_done ? '✓' : '✗'}`),
-            tag(`OH2 ${visit && visit.oh2_done ? '✓' : '✗'}`),
-            tag(`OH3 ${visit && visit.oh3_done ? '✓' : '✗'}`),
-            tag(`FL ${visit && visit.fluoride_done ? '✓' : '✗'}`)
-          ])
+          codes.length ? h('div', { class: 'pending-list' }, codes) : h('div', { class: 'muted', text: '—' })
         ])
+      ]),
+
+      h('div', { class: 'card' }, [
+        h('h3', { class: 'card-title', text: T.care_checklist }),
+        careChecklist(visit)
       ]),
 
       priorPending.length ? h('div', { class: 'pending-box' }, [

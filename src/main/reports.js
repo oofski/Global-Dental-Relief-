@@ -23,8 +23,8 @@ const { reportStrings, LANG_NAMES } = require('./i18n');
 const ROW_KEYS = [
   'fill_single', 'fill_double', 'fill_multi', 'composite',
   'ext_permanent', 'ext_primary', 'ext_surgical',
-  'sealant', 'sdf', 'cleaning_prophy', 'cleaning_debride',
-  'fluoride', 'oh_lessons', 'total_patients', 'nv_patients'
+  'sealant', 'sdf', 'cleaning_prophy', 'cleaning_debride', 'cleaning_recommended',
+  'fluoride', 'fluoride_recommended', 'oh_lessons', 'total_patients', 'nv_patients'
 ];
 
 function reportLang() {
@@ -72,12 +72,14 @@ function computeStats(opts) {
         });
       }
 
-      // Cleanings
+      // Cleanings — recommended (clinician order) and completed (executed)
+      if (v.cleaning_type === 'P' || v.cleaning_type === 'D') counts.cleaning_recommended++;
       if (v.cleaning_done) {
         if (v.cleaning_type === 'P') counts.cleaning_prophy++;
         else if (v.cleaning_type === 'D') counts.cleaning_debride++;
       }
-      // Fluoride
+      // Fluoride — recommended and completed
+      if (v.fluoride_recommended) counts.fluoride_recommended++;
       if (v.fluoride_done) counts.fluoride++;
       // OH lessons
       if (v.oh1_done) counts.oh_lessons++;
