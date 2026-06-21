@@ -8,6 +8,7 @@ export function renderDentist(container, ctx) {
   function screenLoad() {
     const selector = driveSelector({
       mode: 'read',
+      mergeMaster: true,
       onLoaded: (patient, drivePath) => screenEditor(patient, drivePath)
     });
     mount(container, h('div', { class: 'view' }, [
@@ -102,6 +103,7 @@ export function renderDentist(container, ctx) {
         screenEditor(patient, drivePath);
         return;
       }
+      try { await window.api.db.mergeFromDrive(patient); } catch (_) { /* drive saved regardless */ }
       await alertDialog(T.saved, T.drive_saved);
       screenLoad();
     }

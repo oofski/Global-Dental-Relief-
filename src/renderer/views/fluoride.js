@@ -5,7 +5,7 @@ import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, treatment
 
 export function renderFluoride(container) {
   function screenLoad() {
-    const selector = driveSelector({ mode: 'read', onLoaded: screenEditor });
+    const selector = driveSelector({ mode: 'read', mergeMaster: true, onLoaded: screenEditor });
     mount(container, h('div', { class: 'view' }, [
       h('div', { class: 'view-head' }, [h('h2', { text: T.fluoride_title })]),
       selector.node
@@ -26,6 +26,7 @@ export function renderFluoride(container) {
       mount(container, h('div', { class: 'view' }, [spinner(T.loading)]));
       const write = await window.api.drive.write(drivePath, patient);
       if (!write.ok) { await alertDialog(T.error, write.reason); screenEditor(patient, drivePath); return; }
+      try { await window.api.db.mergeFromDrive(patient); } catch (_) { /* drive saved regardless */ }
       await alertDialog(T.saved, T.drive_saved);
       screenLoad();
     }

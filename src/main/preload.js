@@ -52,6 +52,7 @@ contextBridge.exposeInMainWorld('api', {
     createPatient: (fields) => invoke('db:createPatient', fields),
     savePatient: (patient) => invoke('db:savePatient', patient),
     uploadPatient: (patient) => invoke('db:uploadPatient', patient),
+    mergeFromDrive: (patient) => invoke('db:mergeFromDrive', patient),
     getPatient: (id) => invoke('db:getPatient', id),
     getPatientByNumber: (num) => invoke('db:getPatientByNumber', num),
     search: (q) => invoke('db:search', q),

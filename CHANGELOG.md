@@ -4,6 +4,22 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.1.3 — 2026-06-18
+- **Fixed: station work now persists to the patient record and reports.**
+  Previously the dentist/cleaning/fluoride stations wrote only to the flash
+  drive, so OH/cleaning/fluoride/treatment work never reached the master database
+  (which reports and checkout read) until checkout upload — and could be missed
+  entirely. Now every station merges its work into the master record on load and
+  on save, so it accumulates immediately and shows everywhere.
+- Hardened the record merge to combine visits **field-by-field** (OR the
+  completion flags, union treatment items by id, keep the latest scalars) so one
+  station's save can never clobber another's.
+- Cleaning & Fluoride now show the doctor's accumulated treatment (and a treatment
+  summary), not "(0)".
+- Checkout gained a per-patient **treatment summary** (counts of work performed
+  this visit) and reliably shows work accumulated across stations.
+- Reports now reflect station work as it happens, not only checkout entries.
+
 ## v1.1.2 — 2026-06-18
 - The Checkout "ending form" Care checklist is now **interactive**: the operator
   can tick off **cleaning completed, fluoride completed, and OH1/OH2/OH3** directly

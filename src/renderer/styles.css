@@ -267,6 +267,12 @@ h1,h2,h3{letter-spacing:-.01em}
 .care-checklist-edit .checkbox{padding:2px 0}
 .visit-flags{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
 
+/* per-patient treatment summary */
+.tx-summary{margin-top:10px;border-top:1px solid var(--line);padding-top:8px;display:flex;flex-direction:column;gap:4px;max-width:420px}
+.tx-sum-row{display:flex;justify-content:space-between;gap:12px;font-size:13.5px}
+.tx-sum-n{font-weight:700;font-variant-numeric:tabular-nums;color:var(--blue-800)}
+.tx-sum-total{border-top:1px dashed var(--line-2);margin-top:4px;padding-top:6px;font-weight:700}
+
 /* tooth editor modal */
 .tooth-editor{min-width:420px;max-width:560px}
 .tooth-editor-head{display:flex;align-items:center;gap:16px;margin-bottom:16px}

@@ -6,7 +6,7 @@ import { driveSelector } from '../components/shared.js';
 
 export function renderCleaning(container) {
   function screenLoad() {
-    const selector = driveSelector({ mode: 'read', onLoaded: screenEditor });
+    const selector = driveSelector({ mode: 'read', mergeMaster: true, onLoaded: screenEditor });
     mount(container, h('div', { class: 'view' }, [
       h('div', { class: 'view-head' }, [h('h2', { text: T.cleaning_title })]),
       selector.node
@@ -28,6 +28,7 @@ export function renderCleaning(container) {
       mount(container, h('div', { class: 'view' }, [spinner(T.loading)]));
       const write = await window.api.drive.write(drivePath, patient);
       if (!write.ok) { await alertDialog(T.error, write.reason); screenEditor(patient, drivePath); return; }
+      try { await window.api.db.mergeFromDrive(patient); } catch (_) { /* drive saved regardless */ }
       await alertDialog(T.saved, T.drive_saved);
       screenLoad();
     }

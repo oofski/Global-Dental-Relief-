@@ -153,11 +153,78 @@ function mergePatient(existing, incoming) {
     if (!a || (b && b >= a)) merged.medical_history = incoming.medical_history;
   }
   if (incoming.consent && incoming.consent.signed) merged.consent = incoming.consent;
-  // Visits union by visit_id
+  // Visits: field-merge same visit_id (so a partial save from one station never
+  // clobbers another station's fields). Boolean *_done flags OR together,
+  // treatment_items union by item id, scalars prefer the more-recently modified.
   const byId = {};
   (merged.visits || []).forEach((v) => { byId[v.visit_id] = v; });
-  (incoming.visits || []).forEach((v) => { byId[v.visit_id] = v; });
+  (incoming.visits || []).forEach((v) => {
+    byId[v.visit_id] = byId[v.visit_id] ? mergeVisit(byId[v.visit_id], v) : v;
+  });
   merged.visits = Object.values(byId).sort((x, y) => (x.visit_date || '').localeCompare(y.visit_date || ''));
+  return merged;
+}
+
+// Merge two records of the SAME visit (same visit_id) without losing fields.
+function mergeVisit(a, b) {
+  const aNewer = (a.last_modified || '') >= (b.last_modified || '');
+  const base = aNewer ? a : b;        // scalar winner
+  const other = aNewer ? b : a;
+  const out = JSON.parse(JSON.stringify(base));
+
+  // Boolean completion flags: true if EITHER recorded it.
+  ['nt_status', 'cleaning_done', 'oh1_done', 'oh2_done', 'oh3_done', 'fluoride_done', 'fluoride_recommended']
+    .forEach((k) => { out[k] = !!(a[k] || b[k]); });
+
+  // Timestamps / outcome: keep whichever side actually has a value.
+  ['cleaning_done_at', 'fluoride_done_at', 'checkout_timestamp', 'visit_outcome', 'exam_type', 'clinician_type', 'clinician_initials']
+    .forEach((k) => { if (!out[k]) out[k] = base[k] || other[k] || out[k]; });
+  // cleaning_type: prefer an actual order (P/D) over None/empty.
+  const orders = [a.cleaning_type, b.cleaning_type].filter((x) => x === 'P' || x === 'D');
+  if (orders.length) out.cleaning_type = base.cleaning_type === 'P' || base.cleaning_type === 'D' ? base.cleaning_type : orders[0];
+
+  // treatment_items: union by item id (fall back to tooth+type), prefer completed.
+  const items = {};
+  const key = (t) => t.id || `${t.tooth}|${t.treatment_type}`;
+  (a.treatment_items || []).forEach((t) => { items[key(t)] = t; });
+  (b.treatment_items || []).forEach((t) => {
+    const k = key(t); const prev = items[k];
+    items[k] = prev ? (((b.last_modified || '') >= (a.last_modified || '')) ? Object.assign({}, prev, t, { complete: !!(prev.complete || t.complete) }) : Object.assign({}, t, prev, { complete: !!(prev.complete || t.complete) })) : t;
+  });
+  out.treatment_items = Object.values(items);
+
+  // tooth_conditions + station_status: OR/union the maps.
+  out.tooth_conditions = Object.assign({}, a.tooth_conditions || {}, b.tooth_conditions || {});
+  const ss = {};
+  ['checkin', 'dentist', 'cleaning', 'fluoride', 'checkout'].forEach((k) => {
+    ss[k] = !!((a.station_status && a.station_status[k]) || (b.station_status && b.station_status[k]));
+  });
+  out.station_status = ss;
+
+  // treatment_notes: keep the non-empty / longer of the two.
+  const an = (a.treatment_notes || '').trim(); const bn = (b.treatment_notes || '').trim();
+  out.treatment_notes = an.length >= bn.length ? an : bn;
+  out.last_modified = (a.last_modified || '') >= (b.last_modified || '') ? a.last_modified : b.last_modified;
+  return out;
+}
+
+/**
+ * Merge a patient record coming off a flash drive into the master DB WITHOUT
+ * marking it checked out. Used by the clinical stations so their work accumulates
+ * in the persistent record (and shows in reports / checkout) as soon as they save.
+ */
+function mergeFromDrive(incoming) {
+  if (!incoming || !incoming.id) throw new Error('mergeFromDrive: missing id');
+  const s = load();
+  let existing = s.patients[incoming.id];
+  if (!existing && incoming.patient_number != null) {
+    existing = Object.values(s.patients).find((p) => p.patient_number === incoming.patient_number) || null;
+  }
+  const merged = mergePatient(existing, incoming);
+  merged.synced = false;
+  model.touch(merged);
+  s.patients[merged.id] = merged;
+  persist();
   return merged;
 }
 
@@ -320,6 +387,7 @@ module.exports = {
   createPatient,
   savePatient,
   uploadPatient,
+  mergeFromDrive,
   getPatient,
   getPatientByNumber,
   searchPatients,

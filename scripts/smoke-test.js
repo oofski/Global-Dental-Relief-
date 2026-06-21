@@ -173,6 +173,20 @@ function ok(name) { pass++; console.log('  ✓', name); }
   assert.strictEqual(users.remove(adminUser.id).error, 'last_admin', 'cannot remove last admin');
   ok('user accounts: login, create, change password, last-admin guard');
 
+  // 12b. Station merge accumulates into master (no checkout stamp) + field-merge
+  {
+    const id = db.allPatients()[0].id;
+    const baseClin = model.lastVisit(db.getPatient(id)).clinician_initials;
+    const partial = JSON.parse(JSON.stringify(db.getPatient(id)));
+    const pv = model.lastVisit(partial);
+    pv.oh3_done = true; pv.clinician_initials = ''; pv.last_modified = model.nowISO();
+    db.mergeFromDrive(partial);
+    const mv = model.lastVisit(db.getPatient(id));
+    assert.strictEqual(mv.oh3_done, true, 'merge applies new flag');
+    assert.strictEqual(mv.clinician_initials, baseClin, 'field-merge does not drop clinician');
+    ok('station merge accumulates without checkout + preserves fields (1.1.3)');
+  }
+
   // 13. Clear patients (new ledger) + reset numbering
   const beforeClear = db.allPatients().length;
   assert.ok(beforeClear > 0, 'there are patients to clear');

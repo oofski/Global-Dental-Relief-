@@ -129,9 +129,31 @@ export function treatmentDonePanel(visit, { open = false } = {}) {
       body.appendChild(h('div', { class: 'muted', text: visit.nt_status ? 'NT' : '—' }));
     }
     if (visit.treatment_notes) body.appendChild(h('div', { class: 'visit-notes', text: visit.treatment_notes }));
+    body.appendChild(visitTreatmentSummary(visit));
   }
   details.appendChild(body);
   return details;
+}
+
+// ---- Per-patient treatment summary (counts of work done this visit) ----
+const RPT_LABELS = {
+  fill_single: 'rpt_fill_single', fill_double: 'rpt_fill_double', fill_multi: 'rpt_fill_multi',
+  composite: 'rpt_composite', ext_permanent: 'rpt_ext_permanent', ext_primary: 'rpt_ext_primary',
+  ext_surgical: 'rpt_ext_surgical', sealant: 'rpt_sealant', sdf: 'rpt_sdf'
+};
+export function visitTreatmentSummary(visit) {
+  const items = (visit && visit.treatment_items) || [];
+  const counts = {};
+  items.forEach((t) => { const k = window.api.codes.classifyItem(t); if (k) counts[k] = (counts[k] || 0) + 1; });
+  const done = items.filter((t) => t.complete).length;
+  const rows = Object.keys(RPT_LABELS).filter((k) => counts[k]).map((k) =>
+    h('div', { class: 'tx-sum-row' }, [h('span', { text: T[RPT_LABELS[k]] }), h('span', { class: 'tx-sum-n', text: String(counts[k]) })]));
+  if (!rows.length) rows.push(h('div', { class: 'muted', text: visit && visit.nt_status ? 'NT' : '—' }));
+  rows.push(h('div', { class: 'tx-sum-row tx-sum-total' }, [
+    h('span', { text: `${T.tx_this_visit}` }),
+    h('span', { class: 'tx-sum-n', text: `${done}/${items.length}` })
+  ]));
+  return h('div', { class: 'tx-summary' }, rows);
 }
 
 // ---- Care checklist: recommended vs completed (cleaning / fluoride / OH) ----
@@ -196,7 +218,7 @@ export function careChecklist(visit, { editable = false } = {}) {
 
 // ---- Drive selector ----
 // onLoaded(patient, drivePath) for read stations; onSelected(drivePath) for write.
-export function driveSelector({ mode = 'read', onLoaded, onSelected } = {}) {
+export function driveSelector({ mode = 'read', onLoaded, onSelected, mergeMaster = false } = {}) {
   const host = h('div', { class: 'drive-selector card' });
   let drives = [];
   let selected = null;
@@ -225,7 +247,13 @@ export function driveSelector({ mode = 'read', onLoaded, onSelected } = {}) {
         }
         return;
       }
-      if (onLoaded) onLoaded(r.patient, selected);
+      let patient = r.patient;
+      // Merge with the master record so the station sees work accumulated by
+      // other stations (and persists this load into the master ledger).
+      if (mergeMaster) {
+        try { const m = await window.api.db.mergeFromDrive(patient); if (m && m.ok && m.data) patient = m.data; } catch (_) { /* keep drive copy */ }
+      }
+      if (onLoaded) onLoaded(patient, selected);
     } else {
       if (onSelected) onSelected(selected);
     }

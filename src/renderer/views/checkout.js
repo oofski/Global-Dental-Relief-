@@ -1,7 +1,7 @@
 /* Checkout / Master station (spec 5.5, 7.3). Admin role. */
 import { h, mount, toast, alertDialog, confirmDialog, fmtDate, fmtDateTime, timeSince, spinner } from '../util.js';
 import { T } from '../i18n/index.js';
-import { alertBanner, patientSummary, visitHistoryPanel, driveSelector, careChecklist } from '../components/shared.js';
+import { alertBanner, patientSummary, visitHistoryPanel, driveSelector, careChecklist, visitTreatmentSummary } from '../components/shared.js';
 import { renderReports } from './reports.js';
 import { renderSettings } from './settings.js';
 
@@ -33,7 +33,7 @@ export function renderCheckout(container, ctx) {
 
   // ---- Process patient from drive ----
   function screenLoad(host) {
-    const selector = driveSelector({ mode: 'read', onLoaded: (patient, drivePath) => screenProcess(host, patient, drivePath) });
+    const selector = driveSelector({ mode: 'read', mergeMaster: true, onLoaded: (patient, drivePath) => screenProcess(host, patient, drivePath) });
     mount(host, h('div', { class: 'view-head', }, [h('h2', { text: T.final_review })]), selector.node);
   }
 
@@ -119,7 +119,8 @@ export function renderCheckout(container, ctx) {
         h('h3', { class: 'card-title', text: T.treatment_plan }),
         h('div', { class: 'visit-detail' }, [
           h('div', { text: `${T.exam_type}: ${visit ? (visit.exam_type || '—') : '—'} · ${visit ? (visit.clinician_type || '') : ''} ${visit ? (visit.clinician_initials || '') : ''}` }),
-          codes.length ? h('div', { class: 'pending-list' }, codes) : h('div', { class: 'muted', text: '—' })
+          codes.length ? h('div', { class: 'pending-list' }, codes) : h('div', { class: 'muted', text: '—' }),
+          visitTreatmentSummary(visit)
         ])
       ]),
 

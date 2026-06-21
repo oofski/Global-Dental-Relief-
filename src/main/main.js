@@ -320,6 +320,13 @@ function registerIpc() {
     try { return ok(db.uploadPatient(patient)); }
     catch (e) { return fail('upload_failed', String(e.message || e)); }
   });
+  // Stations merge their work into the master record (no checkout stamp) so it
+  // accumulates + shows in reports/checkout immediately. Any logged-in role.
+  ipcMain.handle('db:mergeFromDrive', (_e, patient) => {
+    if (!session) return fail('forbidden');
+    try { return ok(db.mergeFromDrive(patient)); }
+    catch (e) { return fail('merge_failed', String(e.message || e)); }
+  });
   ipcMain.handle('db:getPatient', (_e, id) => ok(db.getPatient(id)));
   ipcMain.handle('db:getPatientByNumber', (_e, num) => ok(db.getPatientByNumber(num)));
   ipcMain.handle('db:search', (_e, q) => ok(db.searchPatients(q)));
