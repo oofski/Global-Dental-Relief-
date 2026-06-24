@@ -51,6 +51,10 @@ function createWindow() {
       // Give the renderer a beat to run boot() and render the login screen.
       setTimeout(async () => {
         try {
+          const bodyFont = await mainWindow.webContents.executeJavaScript("getComputedStyle(document.body).fontFamily");
+          const lockup = await mainWindow.webContents.executeJavaScript("(document.querySelector('.login-lockup')||{}).naturalWidth||0");
+          console.log('[smoke] body font:', JSON.stringify(bodyFont));
+          console.log('[smoke] login lockup img natural width:', lockup);
           const inputs = await mainWindow.webContents.executeJavaScript("document.querySelectorAll('.login-input').length");
           const btnText = await mainWindow.webContents.executeJavaScript("(document.querySelector('.login-btn')||{}).textContent||''");
           const subText = await mainWindow.webContents.executeJavaScript("(document.querySelector('.login-h2')||{}).textContent||''");

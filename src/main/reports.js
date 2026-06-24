@@ -165,6 +165,8 @@ async function exportSummaryXLSX(stats) {
   ws.addRow(['© 2026 Software Smiles™ — Mexico Clinic - Global Dental Relief']).font = { italic: true, size: 9, color: { argb: 'FF888888' } };
   ws.getColumn(1).width = 46;
   ws.getColumn(2).width = 12;
+  // "Progress Report typeface: Georgia" (GDR Graphic Standards).
+  ws.eachRow((row) => { row.eachCell((cell) => { cell.font = Object.assign({ name: 'Georgia' }, cell.font || {}); }); });
   const file = path.join(paths.exports(), timestampName('treatment_report', 'xlsx'));
   await wb.xlsx.writeFile(file);
   return file;

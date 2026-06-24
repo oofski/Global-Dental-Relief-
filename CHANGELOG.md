@@ -4,6 +4,16 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.1.4 — 2026-06-24
+- **Brand alignment to the GDR Graphic Standards.** Applied the official Global
+  Dental Relief logo (real logo mark in the header + window/installer icon, full
+  lockup on the login screen), the brand globe palette (Dental blue, Light blue,
+  Relief purple, GDR Orange, brown, gold), the Myriad-Pro-substitute UI typeface
+  (bundled Source Sans 3) with **Georgia** for the progress reports/exports.
+- Front-end polish pass: fixed white-on-color contrast to meet WCAG AA (kept the
+  bright brand colors for tints, darker brand-blue for text surfaces), removed
+  leftover non-brand colors, and tidied the type scale.
+
 ## v1.1.3 — 2026-06-18
 - **Fixed: station work now persists to the patient record and reports.**
   Previously the dentist/cleaning/fluoride stations wrote only to the flash

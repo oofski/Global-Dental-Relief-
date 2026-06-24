@@ -46,7 +46,7 @@ export function renderLogin({ config, onLogin }) {
 
   mount(wrap,
     h('div', { class: 'login-card' }, [
-      h('img', { class: 'login-logo', src: '../../assets/icon.png', alt: '' }),
+      h('img', { class: 'login-lockup', src: '../../assets/logo-block.png', alt: 'Global Dental Relief' }),
       h('h1', { class: 'login-title', text: config.clinic_name || T.app_title }),
       h('div', { class: 'login-sub', text: T.by }),
       h('h2', { class: 'login-h2', text: T.login_welcome }),
