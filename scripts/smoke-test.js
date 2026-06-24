@@ -187,6 +187,25 @@ function ok(name) { pass++; console.log('  ✓', name); }
     ok('station merge accumulates without checkout + preserves fields (1.1.3)');
   }
 
+  // 12c. fluoride_recommended: dentist "no fluoride" sticks; not counted before dentist (1.1.5)
+  {
+    db._reset();
+    const fp = db.createPatient({ first_name: 'F', school_group: 'E', age_at_first_visit: 7, sex: 'F' });
+    const fv0 = model.newVisit(fp); fv0.oh1_done = true; fv0.station_status.checkin = true; fp.visits = [fv0]; db.savePatient(fp);
+    const frCount = () => reports.computeStats({}).rows.find((x) => x.key === 'fluoride_recommended').count;
+    assert.strictEqual(frCount(), 0, 'fluoride_recommended NOT counted before the dentist examines');
+    // dentist turns fluoride OFF (e.g. heavy extraction)
+    const d = JSON.parse(JSON.stringify(db.getPatient(fp.id))); const dv = model.lastVisit(d);
+    dv.exam_type = 'E'; dv.fluoride_recommended = false; dv.last_modified = model.nowISO(); db.mergeFromDrive(d);
+    assert.strictEqual(model.lastVisit(db.getPatient(fp.id)).fluoride_recommended, false, 'dentist no-fluoride decision kept');
+    // a later STALE save carrying the default true must NOT restore the recommendation
+    const stale = JSON.parse(JSON.stringify(db.getPatient(fp.id))); const sv = model.lastVisit(stale);
+    sv.fluoride_recommended = true; sv.last_modified = model.nowISO(); db.mergeFromDrive(stale);
+    assert.strictEqual(model.lastVisit(db.getPatient(fp.id)).fluoride_recommended, false, 'stale default does not restore fluoride recommendation');
+    assert.strictEqual(frCount(), 0, 'a declined-fluoride visit is not counted as recommended');
+    ok('fluoride_recommended override sticks + gated on dentist exam (1.1.5)');
+  }
+
   // 13. Clear patients (new ledger) + reset numbering
   const beforeClear = db.allPatients().length;
   assert.ok(beforeClear > 0, 'there are patients to clear');

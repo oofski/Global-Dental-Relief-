@@ -172,16 +172,22 @@ function mergeVisit(a, b) {
   const other = aNewer ? b : a;
   const out = JSON.parse(JSON.stringify(base));
 
-  // Boolean completion flags: true if EITHER recorded it.
-  ['nt_status', 'cleaning_done', 'oh1_done', 'oh2_done', 'oh3_done', 'fluoride_done', 'fluoride_recommended']
+  // Completion flags are append-only: true if EITHER side recorded it.
+  ['nt_status', 'cleaning_done', 'oh1_done', 'oh2_done', 'oh3_done', 'fluoride_done']
     .forEach((k) => { out[k] = !!(a[k] || b[k]); });
+
+  // fluoride_recommended is a clinician TOGGLE (default true, the dentist may turn
+  // it off after a heavy extraction). Preserve a "no fluoride" decision regardless
+  // of save order: false on either side wins (don't let a stale default restore it).
+  out.fluoride_recommended = (a.fluoride_recommended !== false) && (b.fluoride_recommended !== false);
 
   // Timestamps / outcome: keep whichever side actually has a value.
   ['cleaning_done_at', 'fluoride_done_at', 'checkout_timestamp', 'visit_outcome', 'exam_type', 'clinician_type', 'clinician_initials']
     .forEach((k) => { if (!out[k]) out[k] = base[k] || other[k] || out[k]; });
-  // cleaning_type: prefer an actual order (P/D) over None/empty.
+  // cleaning_type (clinician order): never downgrade an actual order (P/D) to None,
+  // because a later station often re-saves a copy carrying the default 'None'.
   const orders = [a.cleaning_type, b.cleaning_type].filter((x) => x === 'P' || x === 'D');
-  if (orders.length) out.cleaning_type = base.cleaning_type === 'P' || base.cleaning_type === 'D' ? base.cleaning_type : orders[0];
+  if (orders.length) out.cleaning_type = (base.cleaning_type === 'P' || base.cleaning_type === 'D') ? base.cleaning_type : orders[0];
 
   // treatment_items: union by item id (fall back to tooth+type), prefer completed.
   const items = {};

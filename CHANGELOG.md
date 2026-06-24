@@ -4,6 +4,18 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.1.5 — 2026-06-24
+- Full data-flow audit + integration testing of the station → station → checkout →
+  reports pipeline (new `scripts/flow-test.js`, 198 assertions: happy path,
+  out-of-order saves, stale-copy merges, NV carry, two-laptop, full round-trip —
+  all pass). Confirmed checked items move and accumulate correctly with no loss or
+  double-counting.
+- Fixed: the dentist's "no fluoride" decision could be reverted by a later default
+  during merge — `fluoride_recommended` now stays off once set (regardless of save
+  order).
+- Fixed: reports counted "fluoride recommended" for every visit (it defaults on at
+  check-in) — now only counts visits the dentist actually examined.
+
 ## v1.1.4 — 2026-06-24
 - **Brand alignment to the GDR Graphic Standards.** Applied the official Global
   Dental Relief logo (real logo mark in the header + window/installer icon, full

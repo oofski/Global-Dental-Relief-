@@ -78,8 +78,9 @@ function computeStats(opts) {
         if (v.cleaning_type === 'P') counts.cleaning_prophy++;
         else if (v.cleaning_type === 'D') counts.cleaning_debride++;
       }
-      // Fluoride — recommended and completed
-      if (v.fluoride_recommended) counts.fluoride_recommended++;
+      // Fluoride — recommended (only count when the dentist actually examined the
+      // patient; fluoride_recommended defaults true on every new visit) and completed.
+      if (v.fluoride_recommended && (v.exam_type || (v.station_status && v.station_status.dentist))) counts.fluoride_recommended++;
       if (v.fluoride_done) counts.fluoride++;
       // OH lessons
       if (v.oh1_done) counts.oh_lessons++;
