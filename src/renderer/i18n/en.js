@@ -346,6 +346,12 @@ export const en = {
   install_restart: 'Install & restart',
   update_error_msg: 'Could not check for updates.',
   updates_unavailable: 'Auto-update is only available in the installed app (and needs the repository to be public).',
+  update_banner_available: 'A new version ({v}) is downloading…',
+  update_banner_ready: 'Update {v} is ready to install.',
+  update_banner_restart: 'Restart & update',
+  update_banner_dismiss: 'Later',
+  update_portable_msg: 'Auto-update is not available in the portable version. Download the latest installer from the Releases page.',
+  update_open_releases: 'Open downloads',
 
   // Tooth chart — layout, health screening, auto notes (v1.1.1)
   chart_view_label: 'Chart',

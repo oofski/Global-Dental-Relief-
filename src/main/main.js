@@ -391,23 +391,48 @@ app.whenReady().then(() => {
 // and (via the admin Settings page) lets the user install + restart. Status is
 // forwarded to the renderer. Only active in the packaged, installed app.
 let autoUpdater = null;
-let updateState = { status: 'idle', version: null, percent: 0, error: null };
+let updateState = { status: 'idle', version: null, percent: 0, error: null, current: null, portable: false };
+const RELEASES_URL = 'https://github.com/oofski/Global-Dental-Relief-/releases/latest';
+
+// The portable target runs as a single self-extracting .exe and CANNOT apply an
+// in-place update (electron-updater needs the NSIS-installed app). Detect it so
+// we can tell the user clearly instead of failing silently. electron-builder
+// sets PORTABLE_EXECUTABLE_DIR/FILE in the portable runtime environment.
+function isPortable() {
+  return !!(process.env.PORTABLE_EXECUTABLE_DIR || process.env.PORTABLE_EXECUTABLE_FILE);
+}
 
 function updaterAvailable() {
-  return !!(app.isPackaged && !isDev && !process.env.GDR_SMOKE_LAUNCH);
+  return !!(app.isPackaged && !isDev && !process.env.GDR_SMOKE_LAUNCH && !isPortable());
 }
+
+// Persist updater activity to a log file (userData/update.log) so a clinic can
+// send it to us if an update ever fails — there is no other way to see why.
+function updateLog(level, msg) {
+  const line = `[${new Date().toISOString()}] ${level} ${msg}`;
+  try { console.log('[updater]', level, msg); } catch (_) {}
+  try { fs.appendFileSync(path.join(app.getPath('userData'), 'update.log'), line + '\n'); } catch (_) {}
+}
+const updaterLogger = {
+  info: (m) => updateLog('INFO', m),
+  warn: (m) => updateLog('WARN', m),
+  error: (m) => updateLog('ERROR', m),
+  debug: () => {}
+};
 
 function pushUpdateStatus(patch) {
   updateState = Object.assign({}, updateState, patch);
+  if (!updateState.current) { try { updateState.current = app.getVersion(); } catch (_) {} }
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('update:status', updateState);
+    try { mainWindow.webContents.send('update:status', updateState); } catch (_) {}
   }
 }
 
 function getUpdater() {
   if (autoUpdater) return autoUpdater;
   try { ({ autoUpdater } = require('electron-updater')); }
-  catch (e) { return null; }
+  catch (e) { updateLog('ERROR', 'electron-updater not loadable: ' + e); return null; }
+  autoUpdater.logger = updaterLogger;
   autoUpdater.autoDownload = true;            // download as soon as one is found
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.on('checking-for-update', () => pushUpdateStatus({ status: 'checking', error: null }));
@@ -420,13 +445,21 @@ function getUpdater() {
 }
 
 function setupAutoUpdate() {
+  try { updateState.current = app.getVersion(); } catch (_) {}
+  // Portable build: surface a clear "use the installer" state rather than erroring.
+  if (app.isPackaged && !isDev && !process.env.GDR_SMOKE_LAUNCH && isPortable()) {
+    updateLog('WARN', 'running portable build — auto-update unavailable');
+    pushUpdateStatus({ status: 'portable', portable: true });
+    return;
+  }
   if (!updaterAvailable()) return;
   const u = getUpdater();
-  if (!u) return;
+  if (!u) { pushUpdateStatus({ status: 'error', error: 'updater_unavailable' }); return; }
   try {
-    u.checkForUpdates().catch(() => {});
+    // Give the network a moment after launch, then check; re-check periodically.
+    setTimeout(() => { u.checkForUpdates().catch((err) => pushUpdateStatus({ status: 'error', error: String(err && err.message || err) })); }, 4000);
     setInterval(() => { u.checkForUpdates().catch(() => {}); }, 6 * 60 * 60 * 1000);
-  } catch (e) { /* never block startup on updater */ }
+  } catch (e) { updateLog('ERROR', 'setupAutoUpdate ' + e); }
 }
 
 app.on('window-all-closed', () => {
@@ -511,8 +544,14 @@ function registerIpc() {
   });
   ipcMain.handle('update:install', () => {
     if (!updaterAvailable() || !autoUpdater) return fail('updates_unavailable');
-    setImmediate(() => { try { autoUpdater.quitAndInstall(); } catch (_) {} });
+    updateLog('INFO', 'user requested install & restart');
+    // isSilent=false (show the NSIS step), isForceRunAfter=true (relaunch the app).
+    setImmediate(() => { try { autoUpdater.quitAndInstall(false, true); } catch (e) { updateLog('ERROR', 'quitAndInstall ' + e); } });
     return ok(true);
+  });
+  // Open the GitHub Releases page (used by the portable build, which can't self-update).
+  ipcMain.handle('update:openReleases', () => {
+    try { shell.openExternal(RELEASES_URL); return ok(true); } catch (e) { return fail('open_failed', String(e.message || e)); }
   });
 
   // --- Master DB ---

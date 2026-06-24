@@ -43,7 +43,61 @@ async function boot() {
     const info = await window.api.app.info();
     if (info && info.ok) state.appInfo = info.data;
   } catch (e) { /* defaults */ }
+  setupUpdateNotifier();
   showLogin();
+}
+
+// ---- App-wide update notifier --------------------------------------------
+// The auto-updater downloads new versions silently; previously the only place
+// that showed this was the admin Settings page, so most users never saw it.
+// This banner is visible to EVERY role on EVERY screen (login + stations) and
+// gives a one-click "Restart & update" the moment a build is downloaded.
+let updateDismissed = '';   // `${status}:${version}` the user chose to dismiss
+
+function updateBannerHost() {
+  let host = document.getElementById('update-banner-host');
+  if (!host) { host = h('div', { id: 'update-banner-host' }); document.body.insertBefore(host, document.body.firstChild); }
+  return host;
+}
+
+function renderUpdateBanner(s) {
+  const host = updateBannerHost();
+  const key = s ? `${s.status}:${s.version || ''}` : '';
+  const showable = s && ['downloading', 'available', 'downloaded', 'portable'].includes(s.status) && updateDismissed !== key;
+  if (!showable) { mount(host); return; }
+  const dismiss = () => { updateDismissed = key; mount(host); };
+  let msg; let actions;
+  if (s.status === 'downloaded') {
+    msg = T.update_banner_ready.replace('{v}', s.version || '');
+    actions = [
+      h('button', { class: 'btn btn-primary btn-sm', onClick: () => { window.api.update.install(); } }, '↻ ' + T.update_banner_restart),
+      h('button', { class: 'btn btn-ghost btn-sm', onClick: dismiss }, T.update_banner_dismiss)
+    ];
+  } else if (s.status === 'portable') {
+    msg = T.update_portable_msg;
+    actions = [
+      h('button', { class: 'btn btn-secondary btn-sm', onClick: () => { window.api.update.openReleases(); } }, '⬇ ' + T.update_open_releases),
+      h('button', { class: 'btn btn-ghost btn-sm', onClick: dismiss }, T.update_banner_dismiss)
+    ];
+  } else {
+    const pct = s.status === 'downloading' && s.percent ? ` ${s.percent}%` : '';
+    msg = T.update_banner_available.replace('{v}', s.version || '') + pct;
+    actions = [h('button', { class: 'btn btn-ghost btn-sm', onClick: dismiss }, T.update_banner_dismiss)];
+  }
+  mount(host, h('div', { class: 'update-banner update-banner-' + s.status }, [
+    h('span', { class: 'update-banner-msg', text: '⬆ ' + msg }),
+    h('div', { class: 'update-banner-actions' }, actions)
+  ]));
+}
+
+async function setupUpdateNotifier() {
+  try {
+    if (window.api.update && window.api.update.onStatus) window.api.update.onStatus(renderUpdateBanner);
+    const st = await window.api.update.state();
+    if (st && st.ok) renderUpdateBanner(st.data);
+  } catch (_) { /* updater optional */ }
+  // Re-check for updates whenever the operator returns to the app.
+  window.addEventListener('focus', () => { try { window.api.update.check(); } catch (_) { /* ignore */ } });
 }
 
 function showLogin() {

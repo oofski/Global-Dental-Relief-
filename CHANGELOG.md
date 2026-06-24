@@ -4,6 +4,20 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.2.1 — 2026-06-24
+- **Auto-update is now visible and reliable.** Previously the app downloaded new
+  versions silently and only showed it inside the admin Settings page, so most
+  users never knew an update was ready (it only applied when the app happened to
+  quit). Now a **banner appears for every user on every screen** when an update is
+  downloading or ready, with a one-click **"Restart & update"**.
+- **Portable build:** the portable .exe can't update itself (only the installed
+  version can). It now says so clearly and offers an **"Open downloads"** button to
+  grab the latest installer, instead of silently doing nothing.
+- **Diagnostics:** the updater now writes an `update.log` (in the app's data
+  folder) and surfaces errors, so a failed update can actually be diagnosed.
+- Re-checks for updates when you return to the app, and the "Install & restart"
+  now reliably relaunches the app after updating.
+
 ## v1.2.0 — 2026-06-24
 Client action items from the June 22 call. Each request was first audited against
 the current app; items already built were left alone (see "Already in place").

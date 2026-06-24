@@ -345,6 +345,12 @@ export const es = {
   install_restart: 'Instalar y reiniciar',
   update_error_msg: 'No se pudo buscar actualizaciones.',
   updates_unavailable: 'La actualización automática solo está disponible en la app instalada (y requiere que el repositorio sea público).',
+  update_banner_available: 'Descargando una nueva versión ({v})…',
+  update_banner_ready: 'La actualización {v} está lista para instalar.',
+  update_banner_restart: 'Reiniciar y actualizar',
+  update_banner_dismiss: 'Más tarde',
+  update_portable_msg: 'La actualización automática no está disponible en la versión portátil. Descargue el instalador más reciente desde la página de versiones.',
+  update_open_releases: 'Abrir descargas',
 
   // Diagrama dental — vista, tamizaje de salud, notas automáticas (v1.1.1)
   chart_view_label: 'Diagrama',

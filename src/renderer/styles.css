@@ -292,6 +292,18 @@ h1,h2,h3{letter-spacing:-.01em}
 .no-exam-banner{background:var(--blue-50);border:1px solid var(--blue-100);border-left:4px solid var(--blue-500);border-radius:var(--r-sm);
   padding:11px 15px;margin-bottom:14px;color:var(--blue-800);font-weight:600;font-size:13.5px}
 
+/* App-wide software-update banner (visible to every role on every screen) */
+#update-banner-host{position:sticky;top:0;z-index:60}
+.update-banner{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding:9px 18px;color:#fff;font-size:13.5px;box-shadow:var(--sh-1)}
+.update-banner-downloaded{background:var(--grad-blue,var(--blue))}
+.update-banner-downloading,.update-banner-available{background:var(--blue-900)}
+.update-banner-portable{background:var(--nv-deep)}
+.update-banner-msg{font-weight:700}
+.update-banner-actions{display:flex;gap:8px}
+.update-banner .btn-ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.55)}
+.update-banner .btn-ghost:hover{background:rgba(255,255,255,.14);border-color:#fff}
+
 /* checkout per-item outcome control (CHK-8) — Finished / Not done segmented row */
 .tx-outcome-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line)}
 .tx-outcome-row:first-child{border-top:none}
