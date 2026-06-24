@@ -141,6 +141,19 @@ function classifyToken(rawToken) {
   return null;
 }
 
+/**
+ * True if an item is an extraction of a permanent (adult) tooth.
+ * Baby-tooth (primary) extractions do NOT count — they still get fluoride.
+ */
+function isAdultExtractionItem(item) {
+  return !!item && item.treatment_type === 'extraction' && !!item.tooth && !isPrimaryTooth(item.tooth);
+}
+
+/** True if the visit has at least one adult (permanent) tooth extraction. */
+function hasAdultExtraction(visit) {
+  return (visit && visit.treatment_items || []).some(isAdultExtractionItem);
+}
+
 /** Split a treatment_notes blob into individual code tokens. */
 function tokenizeNotes(notes) {
   if (!notes) return [];
@@ -163,5 +176,7 @@ module.exports = {
   formatItem,
   classifyItem,
   classifyToken,
-  tokenizeNotes
+  tokenizeNotes,
+  isAdultExtractionItem,
+  hasAdultExtraction
 };

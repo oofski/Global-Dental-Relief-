@@ -1,7 +1,7 @@
 /* Dentist station (spec 5.2). */
 import { h, mount, field, checkbox, toast, alertDialog, spinner, lastVisit } from '../util.js';
 import { T } from '../i18n/index.js';
-import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, driveSelector } from '../components/shared.js';
+import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, driveSelector, cleaningTypeControl } from '../components/shared.js';
 import { toothChart } from '../components/toothchart.js';
 
 export function renderDentist(container, ctx) {
@@ -52,7 +52,7 @@ export function renderDentist(container, ctx) {
         .map((t) => window.api.codes.formatItem(t)).filter(Boolean).join(', ');
       if (notesEl) notesEl.value = visit.treatment_notes;
     }
-    const chart = toothChart(visit, { onChange: () => { refreshToday(); regenNotes(); } });
+    const chart = toothChart(visit, { onChange: () => { refreshToday(); regenNotes(); refreshFlHint(); } });
 
     // Exam type
     const examSeg = h('div', { class: 'seg' }, [
@@ -72,12 +72,8 @@ export function renderDentist(container, ctx) {
     // NT
     const ntChk = checkbox(T.nt_label, visit.nt_status, (v) => { visit.nt_status = v; });
 
-    // Cleaning order
-    const cleanSeg = h('div', { class: 'seg' }, [
-      h('button', { class: 'seg-btn' + (visit.cleaning_type === 'P' ? ' active' : ''), onClick: (e) => { visit.cleaning_type = 'P'; toggle(cleanSeg, e); } }, T.cleaning_prophy),
-      h('button', { class: 'seg-btn' + (visit.cleaning_type === 'D' ? ' active' : ''), onClick: (e) => { visit.cleaning_type = 'D'; toggle(cleanSeg, e); } }, T.cleaning_debride),
-      h('button', { class: 'seg-btn' + (!visit.cleaning_type || visit.cleaning_type === 'None' ? ' active' : ''), onClick: (e) => { visit.cleaning_type = 'None'; toggle(cleanSeg, e); } }, T.cleaning_none)
-    ]);
+    // Cleaning order (FND-3) — shared single-select control (P/D/None).
+    const cleanSeg = cleaningTypeControl(visit);
 
     // Treatment notes — auto-filled from the chart (#2), still editable.
     const notes = h('textarea', { class: 'textarea', rows: '2', placeholder: T.treatment_notes_hint });
@@ -88,6 +84,18 @@ export function renderDentist(container, ctx) {
 
     // Fluoride recommended (#5) — clinician order; executed at the fluoride station.
     const flRec = checkbox(T.fluoride_recommended_label, visit.fluoride_recommended !== false, (v) => { visit.fluoride_recommended = v; });
+
+    // DOC-3: standing help text + a LIVE reminder (no automation) shown when the
+    // chart contains an adult (permanent) tooth extraction. The doctor decides;
+    // we never auto-toggle the checkbox.
+    const flAdultExtHint = h('div', { class: 'field-hint' });
+    function refreshFlHint() {
+      let adultExt = false;
+      try { adultExt = !!window.api.codes.hasAdultExtraction(visit); } catch (_) { adultExt = false; }
+      flAdultExtHint.classList.toggle('warn-hint', adultExt);
+      flAdultExtHint.textContent = adultExt ? T.fluoride_adult_ext_hint : '';
+    }
+    refreshFlHint();
 
     // OH2
     const oh2 = checkbox(T.oh2_label, visit.oh2_done, (v) => { visit.oh2_done = v; });
@@ -142,7 +150,11 @@ export function renderDentist(container, ctx) {
           h('div', { class: 'field-hint', text: T.nt_hint })
         ]),
         field(T.cleaning_order, cleanSeg),
-        h('div', { class: 'care-rec-row' }, [flRec]),
+        h('div', { class: 'care-rec-row' }, [
+          flRec,
+          h('div', { class: 'field-hint', text: T.fluoride_adult_ext_hint }),
+          flAdultExtHint
+        ]),
         field(T.treatment_notes, notes, { hint: T.treatment_notes_auto })
       ]),
 

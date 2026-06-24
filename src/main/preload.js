@@ -94,7 +94,8 @@ contextBridge.exposeInMainWorld('api', {
     isPrimaryTooth: (t) => codes.isPrimaryTooth(t),
     sortSurfaces: (s) => codes.sortSurfaces(s),
     formatItem: (i) => codes.formatItem(i),
-    classifyItem: (i) => codes.classifyItem(i)
+    classifyItem: (i) => codes.classifyItem(i),
+    hasAdultExtraction: (v) => codes.hasAdultExtraction(v)
   },
   model: {
     todayISO: () => model.todayISO(),

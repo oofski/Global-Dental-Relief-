@@ -127,7 +127,8 @@ function newTreatmentItem(tooth) {
     treatment_type: 'restoration',
     surgical: false,
     treating_today: true,
-    complete: false
+    complete: false,
+    not_done: false
   };
 }
 

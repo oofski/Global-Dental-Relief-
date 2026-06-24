@@ -216,6 +216,45 @@ export function careChecklist(visit, { editable = false } = {}) {
   ]);
 }
 
+// ---- Cleaning type control (shared doctor / hygienist) ----
+// Single-select segmented control (Prophy / Debridement / None) that writes
+// visit.cleaning_type as 'P' | 'D' | 'None' (mutually exclusive). Reuses the
+// SAME label keys the dentist station uses (cleaning_prophy / cleaning_debride /
+// cleaning_none) so the doctor and hygienist read identically.
+// opts.editable (default true): when false, render the current selection read-only.
+export function cleaningTypeControl(visit, opts = {}) {
+  const { editable = true } = opts;
+  const v = visit || {};
+  const OPTS = [
+    ['P', T.cleaning_prophy],
+    ['D', T.cleaning_debride],
+    ['None', T.cleaning_none]
+  ];
+  const current = (v.cleaning_type === 'P' || v.cleaning_type === 'D') ? v.cleaning_type : 'None';
+
+  if (!editable) {
+    const label = (OPTS.find(([val]) => val === current) || OPTS[2])[1];
+    return h('div', { class: 'seg seg-readonly' }, [
+      h('span', { class: 'seg-btn active', text: label })
+    ]);
+  }
+
+  const seg = h('div', { class: 'seg' });
+  OPTS.forEach(([val, label]) => {
+    const btn = h('button', {
+      type: 'button',
+      class: 'seg-btn' + (current === val ? ' active' : ''),
+      onClick: (e) => {
+        v.cleaning_type = val;
+        [...seg.children].forEach((c) => c.classList.remove('active'));
+        e.currentTarget.classList.add('active');
+      }
+    }, label);
+    seg.appendChild(btn);
+  });
+  return seg;
+}
+
 // ---- Drive selector ----
 // onLoaded(patient, drivePath) for read stations; onSelected(drivePath) for write.
 export function driveSelector({ mode = 'read', onLoaded, onSelected, mergeMaster = false } = {}) {

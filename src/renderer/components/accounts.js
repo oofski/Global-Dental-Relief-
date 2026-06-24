@@ -96,15 +96,19 @@ export function renderAccounts(container) {
 
   async function createAccount() {
     const uname = h('input', { class: 'text-input', autocapitalize: 'none', spellcheck: 'false' });
+    const fname = h('input', { class: 'text-input' });
+    const lname = h('input', { class: 'text-input' });
     const dname = h('input', { class: 'text-input' });
     const emailInp = h('input', { class: 'text-input', type: 'email', autocapitalize: 'none', spellcheck: 'false' });
     const role = roleSelect('dentist');
     const pw = passwordField('welcome123');
     const body = h('div', { class: 'form-grid' }, [
       field(T.username, uname, { required: true }),
+      field(T.first_name, fname),
+      field(T.last_name, lname),
       field(T.display_name, dname),
       field(T.email, emailInp),
-      field(T.role, role, { required: true }),
+      field(T.role, role, { required: true, hint: 'Trip leaders should be given the Admin role so they can access and modify patient files.' }),
       field(T.password, pw.node, { hint: T.default_pw_hint })
     ]);
     const val = await modal({
@@ -114,6 +118,8 @@ export function renderAccounts(container) {
     if (!val) return;
     const res = await window.api.users.create({
       username: uname.value.trim(),
+      first_name: fname.value.trim(),
+      last_name: lname.value.trim(),
       display_name: dname.value.trim(),
       email: emailInp.value.trim(),
       role: role.value,
@@ -125,21 +131,25 @@ export function renderAccounts(container) {
   }
 
   async function editAccount(u) {
+    const fname = h('input', { class: 'text-input', value: u.first_name || '' });
+    const lname = h('input', { class: 'text-input', value: u.last_name || '' });
     const dname = h('input', { class: 'text-input', value: u.display_name || '' });
     const emailInp = h('input', { class: 'text-input', type: 'email', value: u.email || '', autocapitalize: 'none', spellcheck: 'false' });
     const role = roleSelect(u.role);
     const body = h('div', { class: 'form-grid' }, [
       field(T.username, h('input', { class: 'text-input', value: u.username, disabled: true })),
+      field(T.first_name, fname),
+      field(T.last_name, lname),
       field(T.display_name, dname),
       field(T.email, emailInp),
-      field(T.role, role)
+      field(T.role, role, { hint: 'Trip leaders should be given the Admin role so they can access and modify patient files.' })
     ]);
     const val = await modal({
       title: T.edit + ' — ' + u.username, body,
       actions: [{ label: T.cancel, value: false }, { label: T.save, value: true, primary: true }]
     });
     if (!val) return;
-    const res = await window.api.users.update(u.id, { display_name: dname.value.trim(), email: emailInp.value.trim(), role: role.value });
+    const res = await window.api.users.update(u.id, { first_name: fname.value.trim(), last_name: lname.value.trim(), display_name: dname.value.trim(), email: emailInp.value.trim(), role: role.value });
     if (!res.ok) { toast(errText(res.error), 'error'); return; }
     toast(T.account_updated, 'success');
     load();

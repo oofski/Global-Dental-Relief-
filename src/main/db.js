@@ -195,7 +195,14 @@ function mergeVisit(a, b) {
   (a.treatment_items || []).forEach((t) => { items[key(t)] = t; });
   (b.treatment_items || []).forEach((t) => {
     const k = key(t); const prev = items[k];
-    items[k] = prev ? (((b.last_modified || '') >= (a.last_modified || '')) ? Object.assign({}, prev, t, { complete: !!(prev.complete || t.complete) }) : Object.assign({}, t, prev, { complete: !!(prev.complete || t.complete) })) : t;
+    if (!prev) { items[k] = t; return; }
+    const complete = !!(prev.complete || t.complete);
+    // complete always wins over not_done; they are mutually exclusive after merge.
+    const not_done = (!complete) && !!(prev.not_done || t.not_done);
+    const fields = { complete, not_done };
+    items[k] = ((b.last_modified || '') >= (a.last_modified || ''))
+      ? Object.assign({}, prev, t, fields)
+      : Object.assign({}, t, prev, fields);
   });
   out.treatment_items = Object.values(items);
 

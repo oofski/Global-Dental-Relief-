@@ -282,6 +282,27 @@ h1,h2,h3{letter-spacing:-.01em}
 .care-checklist-edit .checkbox{padding:2px 0}
 .visit-flags{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
 
+/* fluoride block banner (FLU-7) — prominent blocking panel */
+.fl-block-banner{background:var(--red-soft);border:1px solid #f2cbc6;border-left:5px solid var(--red);border-radius:var(--r-sm);
+  padding:16px 18px;margin-bottom:14px;box-shadow:var(--sh-1)}
+.fl-block-banner .fl-block-title{font-weight:800;color:#9a2b21;font-size:14px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.fl-block-banner .fl-block-msg{color:#8f211a;font-weight:600;font-size:14px}
+
+/* no-dentist-exam banner (FLOW-5) — subtle info notice */
+.no-exam-banner{background:var(--blue-50);border:1px solid var(--blue-100);border-left:4px solid var(--blue-500);border-radius:var(--r-sm);
+  padding:11px 15px;margin-bottom:14px;color:var(--blue-800);font-weight:600;font-size:13.5px}
+
+/* checkout per-item outcome control (CHK-8) — Finished / Not done segmented row */
+.tx-outcome-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line)}
+.tx-outcome-row:first-child{border-top:none}
+.tx-outcome-seg{display:inline-flex;border:1.5px solid var(--line-2);border-radius:var(--r-sm);overflow:hidden;background:#fff}
+.tx-outcome-seg .seg-btn{background:#fff;border:none;padding:8px 14px;font-size:13px;font-weight:620;cursor:pointer;color:var(--ink-2);
+  border-right:1px solid var(--line);transition:.12s}
+.tx-outcome-seg .seg-btn:last-child{border-right:none}
+.tx-outcome-seg .seg-btn:hover{background:var(--blue-50)}
+.tx-outcome-seg .seg-btn.is-finished{background:var(--green);color:#fff}
+.tx-outcome-seg .seg-btn.is-nd{background:var(--nv-deep);color:#fff}
+
 /* per-patient treatment summary */
 .tx-summary{margin-top:10px;border-top:1px solid var(--line);padding-top:8px;display:flex;flex-direction:column;gap:4px;max-width:420px}
 .tx-sum-row{display:flex;justify-content:space-between;gap:12px;font-size:13.5px}

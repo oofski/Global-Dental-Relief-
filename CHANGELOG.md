@@ -4,6 +4,55 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.2.0 — 2026-06-24
+Client action items from the June 22 call. Each request was first audited against
+the current app; items already built were left alone (see "Already in place").
+
+### Doctor station
+- **Tooth chart:** the **"healthy" (green) status is retired** from the health-status
+  cycle (now just watch → urgent). Existing records that already have a "healthy"
+  mark still display — it's archived, not deleted, so it can be re-enabled later.
+- **Fluoride guidance:** the recommend-fluoride control stays a plain manual
+  checkbox (no automation). Added on-screen guidance — fluoride is recommended for
+  everyone *except* after an **adult (permanent) tooth extraction**; baby-tooth
+  extractions still get fluoride. When an adult extraction is charted, the doctor
+  (and the fluoride station) now see a reminder to uncheck fluoride if appropriate.
+
+### Hygienist station
+- Added the missing **fluoride** field and a **prophy / debridement** selector
+  (mutually exclusive, same control as the doctor uses), alongside the existing
+  **OH2** — so the hygienist can record all four directly.
+
+### Fluoride station
+- **Blocks treatment when the doctor did not recommend fluoride.** If the record
+  shows fluoride is not recommended, plugging in the drive shows a stop screen and
+  the patient is sent onward — treatment can't proceed. (Only an explicit "no"
+  blocks; patients with no doctor decision are still allowed fluoride.)
+
+### Checkout station
+- **Completed vs. not-treated:** the records person can now mark each planned
+  treatment item **Finished** or **Not done (ND)** at checkout, auto-populated from
+  the doctor's drive record. ND items are excluded from the treatment-count reports.
+
+### Patient flow
+- **Patients who skip the doctor are fully supported** (cleaning-only, no-treatment
+  → straight to fluoride, or returning patients going straight to the hygienist).
+  Downstream stations show a "no dentist exam on this record" banner, fluoride stays
+  allowed by default, and reports don't miscount these visits.
+
+### User accounts & admin
+- **Trip-leader logins:** create a named account with **first + last name** and give
+  it the **Admin** role for full patient-file access.
+
+### Already in place (verified, no change needed)
+- Doctor's prophy/debridement is already a single-select (mutually exclusive) control.
+- The fluoride station already loads patient data from the USB and shows OH3 + fluoride.
+- Clear-drive already fully deletes the patient file so the same USB can be reused.
+
+### Quality
+- New `npm run feature` suite (54 data-layer assertions for the above). Full
+  regression pass: smoke 16/16, flow 198/0, feature 54/0, e2e 20/20 (real app).
+
 ## v1.1.6 — 2026-06-24
 - **Fixed a critical data-loss bug: work entered at the chair now actually
   saves.** A testing pass driving the real app found that the Dentist, Cleaning,

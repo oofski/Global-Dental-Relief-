@@ -2,7 +2,9 @@
  * Tooth chart (spec 5.2 Screen C, 6.1–6.3) + v1.1.1 enhancements:
  *   - Layout dropdown: hybrid (adult + primary), full adult (1–32), full primary (a–t).
  *   - Two modes: "Treatment" (click a tooth -> code editor) and "Health status"
- *     (click a tooth to cycle green=healthy / yellow=watch / red=needs-care).
+ *     (click a tooth to cycle yellow=watch / red=needs-care).
+ *     Legacy records with a stored 'healthy' (green) value still render, but
+ *     'healthy' is no longer offered in the cycle or legend.
  *     Health tint is independent of, and layered under, the treatment colours.
  *   - onChange fires on any change so callers can auto-fill treatment notes.
  *
@@ -12,7 +14,7 @@ import { h, mount, modal } from '../util.js';
 import { T } from '../i18n/index.js';
 
 const C = window.api.codes;
-const COND_CYCLE = [null, 'healthy', 'watch', 'urgent'];
+const COND_CYCLE = [null, 'watch', 'urgent'];
 
 function findItem(visit, tooth) {
   return (visit.treatment_items || []).find((t) => String(t.tooth) === String(tooth));
@@ -119,7 +121,6 @@ export function toothChart(visit, { readOnly = false, onChange } = {}) {
   function legend() {
     if (mode !== 'health') return null;
     return h('div', { class: 'health-legend' }, [
-      h('span', { class: 'cond-key cond-healthy', text: T.cond_healthy }),
       h('span', { class: 'cond-key cond-watch', text: T.cond_watch }),
       h('span', { class: 'cond-key cond-urgent', text: T.cond_urgent }),
       h('span', { class: 'health-hint', text: T.chart_health_hint })

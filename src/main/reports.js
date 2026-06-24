@@ -57,8 +57,9 @@ function computeStats(opts) {
       if (!inRange(v.visit_date, o.from, o.to)) continue;
       visitsCounted++;
 
-      // Treatments from structured items (preferred). Count completed items.
-      const items = (v.treatment_items || []).filter((t) => t.complete);
+      // Treatments from structured items (preferred). Count completed items;
+      // never count items explicitly marked "not done" (not_done === true).
+      const items = (v.treatment_items || []).filter((t) => t.complete && t.not_done !== true);
       if (items.length) {
         items.forEach((t) => {
           const k = codes.classifyItem(t);

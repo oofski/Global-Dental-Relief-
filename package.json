@@ -1,6 +1,6 @@
 {
   "name": "gdr-clinic",
-  "version": "1.1.6",
+  "version": "1.2.0",
   "description": "Software Smiles — Global Dental Relief offline clinic practice management (Phase 1, Mexico / Spanish).",
   "author": "Software Smiles — Sidharth Rane",
   "license": "UNLICENSED",
@@ -11,6 +11,7 @@
     "dev": "electron . --dev",
     "smoke": "node scripts/smoke-test.js",
     "flow": "node scripts/flow-test.js",
+    "feature": "node scripts/feature-test.js",
     "e2e": "node scripts/e2e-test.js",
     "e2e:seed": "node scripts/e2e-seed.js",
     "dist": "electron-builder --win --x64",

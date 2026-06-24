@@ -97,6 +97,43 @@ export function renderCheckout(container, ctx) {
     const priorNV = (patient.visits || []).filter((v) => v !== visit && v.visit_outcome === 'NV');
     const priorPending = priorNV.flatMap((v) => (v.treatment_items || []).filter((t) => !t.complete));
 
+    // ---- CHK-8: per-item treatment outcomes (Finished / Not done) ----
+    // Mutates the live visit.treatment_items so the choices persist on Upload.
+    const txItems = (visit && visit.treatment_items) || [];
+    const tallyLine = h('div', { class: 'muted tx-outcome-tally' });
+    function refreshTally() {
+      const finished = txItems.filter((t) => t.complete).length;
+      const notDone = txItems.filter((t) => !t.complete && t.not_done === true).length;
+      tallyLine.textContent = `${T.status_finished}: ${finished} · ${T.status_not_done}: ${notDone} · ${T.outcome_label}: ${txItems.length}`;
+    }
+    function outcomeRow(item) {
+      const seg = h('div', { class: 'tx-outcome-seg' });
+      const finBtn = h('button', { type: 'button', class: 'seg-btn' + (item.complete === true ? ' is-finished' : '') }, T.status_finished);
+      const ndBtn = h('button', { type: 'button', class: 'seg-btn' + (item.complete !== true && item.not_done === true ? ' is-nd' : '') }, T.status_not_done);
+      finBtn.addEventListener('click', () => {
+        item.complete = true; item.not_done = false;
+        finBtn.classList.add('is-finished'); ndBtn.classList.remove('is-nd');
+        refreshTally();
+      });
+      ndBtn.addEventListener('click', () => {
+        item.not_done = true; item.complete = false;
+        ndBtn.classList.add('is-nd'); finBtn.classList.remove('is-finished');
+        refreshTally();
+      });
+      seg.appendChild(finBtn); seg.appendChild(ndBtn);
+      return h('div', { class: 'tx-outcome-row' }, [
+        h('span', { class: 'code-chip' + (item.complete ? ' done' : ''), text: window.api.codes.formatItem(item) }),
+        seg
+      ]);
+    }
+    refreshTally();
+    const outcomesCard = h('div', { class: 'card' }, [
+      h('h3', { class: 'card-title', text: T.outcome_label }),
+      txItems.length
+        ? h('div', { class: 'tx-outcome-list' }, [...txItems.map(outcomeRow), tallyLine])
+        : h('div', { class: 'no-exam-banner', text: T.no_dentist_exam })
+    ]);
+
     mount(host, h('div', { class: 'view checkout-process' }, [
       h('div', { class: 'view-head' }, [
         h('h2', { text: T.final_review }),
@@ -123,6 +160,8 @@ export function renderCheckout(container, ctx) {
           visitTreatmentSummary(visit)
         ])
       ]),
+
+      outcomesCard,
 
       h('div', { class: 'card' }, [
         h('h3', { class: 'card-title', text: T.care_checklist }),

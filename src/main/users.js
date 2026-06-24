@@ -97,11 +97,16 @@ function seedDefaults() {
   persist();
 }
 
-function makeUser(username, password, role, displayName, email) {
+function makeUser(username, password, role, displayName, email, firstName, lastName) {
+  const first = String(firstName || '').trim();
+  const last = String(lastName || '').trim();
+  const display = String(displayName || '').trim() || `${first} ${last}`.trim() || username;
   return {
     id: model.uuid(),
     username: String(username).trim(),
-    display_name: displayName || username,
+    first_name: first,
+    last_name: last,
+    display_name: display,
     email: email || '',
     role,
     password: hashPassword(password),
@@ -115,10 +120,15 @@ function makeUser(username, password, role, displayName, email) {
 function publicUser(u) {
   if (!u) return null;
   const r = ROLES[u.role] || {};
+  const first = u.first_name || '';
+  const last = u.last_name || '';
+  const display = u.display_name || `${first} ${last}`.trim() || u.username;
   return {
     id: u.id,
     username: u.username,
-    display_name: u.display_name,
+    first_name: first,
+    last_name: last,
+    display_name: display,
     email: u.email || '',
     role: u.role,
     active: u.active !== false,
@@ -157,7 +167,7 @@ function roles() {
 
 function validRole(role) { return !!ROLES[role]; }
 
-function create({ username, password, role, display_name }) {
+function create({ username, password, role, display_name, email, first_name, last_name }) {
   load();
   const uname = String(username || '').trim();
   if (!uname) return { ok: false, error: 'username_required' };
@@ -166,7 +176,7 @@ function create({ username, password, role, display_name }) {
   if (!validRole(role)) return { ok: false, error: 'role_invalid' };
   const pw = String(password || '');
   if (pw.length < 6) return { ok: false, error: 'password_too_short' };
-  const u = makeUser(uname, pw, role, display_name, arguments[0].email);
+  const u = makeUser(uname, pw, role, display_name, email, first_name, last_name);
   store.users.push(u);
   persist();
   return { ok: true, user: publicUser(u) };
@@ -176,7 +186,11 @@ function update(id, changes) {
   load();
   const u = store.users.find((x) => x.id === id);
   if (!u) return { ok: false, error: 'not_found' };
-  if (changes.display_name != null) u.display_name = String(changes.display_name).trim() || u.display_name;
+  if (changes.first_name != null) u.first_name = String(changes.first_name).trim();
+  if (changes.last_name != null) u.last_name = String(changes.last_name).trim();
+  if (changes.display_name != null) u.display_name = String(changes.display_name).trim();
+  // Keep display_name coherent: if blank, derive from first/last, else keep username.
+  if (!u.display_name) u.display_name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username;
   if (changes.email != null) u.email = String(changes.email).trim();
   if (changes.role != null) {
     if (!validRole(changes.role)) return { ok: false, error: 'role_invalid' };
