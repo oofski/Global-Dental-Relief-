@@ -1,5 +1,5 @@
 /* Cleaning station (spec 5.3) — single-purpose, with full patient context (#1). */
-import { h, mount, checkbox, toast, alertDialog, fmtDateTime, spinner } from '../util.js';
+import { h, mount, checkbox, toast, alertDialog, fmtDateTime, spinner, lastVisit } from '../util.js';
 import { T } from '../i18n/index.js';
 import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, treatmentDonePanel } from '../components/shared.js';
 import { driveSelector } from '../components/shared.js';
@@ -14,7 +14,7 @@ export function renderCleaning(container) {
   }
 
   function screenEditor(patient, drivePath) {
-    const visit = window.api.model.lastVisit(patient);
+    const visit = lastVisit(patient);
 
     async function markDone() {
       visit.cleaning_done = true;

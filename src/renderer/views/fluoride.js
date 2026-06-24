@@ -1,5 +1,5 @@
 /* Fluoride station (spec 5.4) — OH3 + fluoride, with full patient context (#1). */
-import { h, mount, checkbox, alertDialog, spinner } from '../util.js';
+import { h, mount, checkbox, alertDialog, spinner, lastVisit } from '../util.js';
 import { T } from '../i18n/index.js';
 import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, treatmentDonePanel, driveSelector } from '../components/shared.js';
 
@@ -13,7 +13,7 @@ export function renderFluoride(container) {
   }
 
   function screenEditor(patient, drivePath) {
-    const visit = window.api.model.lastVisit(patient);
+    const visit = lastVisit(patient);
     const hadExtraction = visit && (visit.treatment_items || []).some((t) => t.treatment_type === 'extraction');
 
     const oh3 = checkbox(T.oh3_label, visit && visit.oh3_done, (v) => { if (visit) visit.oh3_done = v; });

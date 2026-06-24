@@ -104,7 +104,10 @@ contextBridge.exposeInMainWorld('api', {
     newTreatmentItem: (tooth) => model.newTreatmentItem(tooth),
     newMedicalHistory: () => model.newMedicalHistory(),
     activeAlerts: (med) => model.activeAlerts(med),
-    fullName: (p) => model.fullName(p),
-    lastVisit: (p) => model.lastVisit(p)
+    fullName: (p) => model.fullName(p)
+    // NOTE: lastVisit() is intentionally NOT exposed here. Crossing the
+    // contextBridge structured-clones the patient, so a returned visit would be
+    // detached from the renderer's object and station edits would be lost. Use
+    // the renderer-local lastVisit() from util.js instead (live reference).
   }
 });

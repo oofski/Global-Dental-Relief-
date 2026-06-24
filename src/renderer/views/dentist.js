@@ -1,5 +1,5 @@
 /* Dentist station (spec 5.2). */
-import { h, mount, field, checkbox, toast, alertDialog, spinner } from '../util.js';
+import { h, mount, field, checkbox, toast, alertDialog, spinner, lastVisit } from '../util.js';
 import { T } from '../i18n/index.js';
 import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, driveSelector } from '../components/shared.js';
 import { toothChart } from '../components/toothchart.js';
@@ -19,7 +19,7 @@ export function renderDentist(container, ctx) {
 
   function screenEditor(patient, drivePath) {
     // Work on the latest visit (created at check-in). Create one if missing.
-    let visit = window.api.model.lastVisit(patient);
+    let visit = lastVisit(patient);
     if (!visit || visit.station_status.checkout) {
       visit = window.api.model.newVisit(patient);
       patient.visits.push(visit);

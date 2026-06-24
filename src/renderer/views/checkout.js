@@ -1,5 +1,5 @@
 /* Checkout / Master station (spec 5.5, 7.3). Admin role. */
-import { h, mount, toast, alertDialog, confirmDialog, fmtDate, fmtDateTime, timeSince, spinner } from '../util.js';
+import { h, mount, toast, alertDialog, confirmDialog, fmtDate, fmtDateTime, timeSince, spinner, lastVisit } from '../util.js';
 import { T } from '../i18n/index.js';
 import { alertBanner, patientSummary, visitHistoryPanel, driveSelector, careChecklist, visitTreatmentSummary } from '../components/shared.js';
 import { renderReports } from './reports.js';
@@ -38,7 +38,7 @@ export function renderCheckout(container, ctx) {
   }
 
   function screenProcess(host, patient, drivePath) {
-    const visit = window.api.model.lastVisit(patient);
+    const visit = lastVisit(patient);
     const st = { uploaded: false };
 
     const outcomeSeg = h('div', { class: 'seg seg-lg' }, [

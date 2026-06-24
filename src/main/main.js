@@ -163,6 +163,211 @@ function createWindow() {
               console.log('[smoke] health-tinted teeth after 2 clicks:', tinted);
               if (!teeth || !views.length) hadError = true;
             }
+
+            // ====================================================================
+            // E2E multi-station scaffolding (TEST-ONLY, env-gated). These probes
+            // drive the REAL renderer UI (same DOM/clicks a clinician makes) so a
+            // full station->station->checkout pass can be scripted, one launch per
+            // station, with state carried on the sim drive + master DB on disk.
+            // None of these alter non-test app behaviour.
+            // ====================================================================
+            const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+            const loadSim = async () => {
+              await mainWindow.webContents.executeJavaScript("(function(){var c=document.querySelector('.drive-chip.sim'); if(c) c.click(); return !!c;})()");
+              await wait(1100); // drive read + master merge + re-render
+            };
+
+            // --- ROOT-CAUSE PROBE (v1.1.6 fix): the stations now resolve the
+            //     working visit with the RENDERER-LOCAL lastVisit() from util.js
+            //     (no contextBridge crossing), so the returned visit is a LIVE
+            //     reference into patient.visits[] and station edits persist. This
+            //     probe (a) confirms the old bridge footgun
+            //     window.api.model.lastVisit is GONE, and (b) loads the real
+            //     util.js the views import and verifies a mutation propagates. ---
+            if (process.env.GDR_SMOKE_BRIDGE) {
+              const res = await mainWindow.webContents.executeJavaScript(`(async function(){
+                var bridgeExposed = !!(window.api && window.api.model && window.api.model.lastVisit);
+                var mod = await import('./util.js');                 // the exact module the views use
+                var p = { id:'t', patient_number:1, visits:[ { visit_id:'v1', treatment_items:[] } ] };
+                var v = mod.lastVisit(p);                            // renderer-local — no bridge
+                v.treatment_items.push({ id:'x', tooth:'19' });      // mutate the returned visit
+                return { bridgeExposed: bridgeExposed, returnedLen: v.treatment_items.length, patientLen: p.visits[0].treatment_items.length, same: v === p.visits[0] };
+              })()`);
+              console.log('[smoke] bridge lastVisit identity:', JSON.stringify(res));
+              const live = res.patientLen === res.returnedLen && res.same === true;
+              console.log('[smoke] bridge VERDICT:', live ? 'LIVE-REFERENCE (edits propagate)' : 'DETACHED-CLONE (edits LOST on write)');
+              console.log('[smoke] bridge footgun removed:', res.bridgeExposed === false);
+            }
+
+            // --- DENTIST: add a treatment item through the chart modal, optionally
+            //     toggle "fluoride recommended" off, then click Save to drive. ----
+            // GDR_SMOKE_DENTIST_SAVE="<tooth>:<treatment_type>:<surfacesCSV>"
+            //   e.g. "19:restoration:O,B"  (surfaces optional)
+            if (process.env.GDR_SMOKE_DENTIST_SAVE) {
+              const [tooth, ttype, surfCSV] = process.env.GDR_SMOKE_DENTIST_SAVE.split(':');
+              const surfaces = (surfCSV || '').split(',').map((s) => s.trim()).filter(Boolean);
+              const noFluoride = process.env.GDR_SMOKE_DENTIST_NOFLUORIDE === '1';
+              await loadSim();
+              const onEditor = await mainWindow.webContents.executeJavaScript("!!document.querySelector('.dentist-view')");
+              console.log('[smoke] dentist editor loaded:', onEditor);
+              // 1. exam type E (required to save)
+              await mainWindow.webContents.executeJavaScript("(function(){var b=[...document.querySelectorAll('.dentist-view .seg-btn')].find(x=>/Exam|New|Nuevo|Examen|E\\b/.test(x.textContent)); if(b)b.click(); var e=[...document.querySelectorAll('.dentist-view .seg-btn')]; if(e[0])e[0].click();})()");
+              await wait(200);
+              // 2. open the target tooth -> modal
+              const toothFound = await mainWindow.webContents.executeJavaScript(`(function(){var t=[...document.querySelectorAll('.tooth')].find(function(el){var id=el.querySelector('.tooth-id'); return id && id.textContent===${JSON.stringify(String(tooth))};}); if(t){t.click(); return true;} return false;})()`);
+              await wait(450);
+              console.log('[smoke] dentist tooth ' + JSON.stringify(String(tooth)) + ' opened:', toothFound, 'modal:', await mainWindow.webContents.executeJavaScript("!!document.querySelector('.modal-overlay')"));
+              // 3. pick treatment type in the modal (match by data via T['tx_'+key]) — fall back to first seg
+              await mainWindow.webContents.executeJavaScript(`(function(){
+                var segs=[...document.querySelectorAll('.modal-overlay .tooth-editor .seg .seg-btn')];
+                var map={restoration:/Restor|Amalgama|Restaur/i,extraction:/Extract|Extracc/i,sealant:/Sealant|Sellador/i,composite:/Composite|Resina|Compuesto/i,sdf:/SDF|Plata|Diamino/i};
+                var re=map[${JSON.stringify(ttype)}];
+                var b=re?segs.find(function(s){return re.test(s.textContent);}):null;
+                (b||segs[0]||{click:function(){}}).click();
+              })()`);
+              await wait(200);
+              // 4. surfaces
+              for (const s of surfaces) {
+                await mainWindow.webContents.executeJavaScript(`(function(){var b=[...document.querySelectorAll('.modal-overlay .surf-btn')].find(function(x){return x.textContent.trim()===${JSON.stringify(s)};}); if(b)b.click();})()`);
+                await wait(80);
+              }
+              // 5. tick "mark complete" (last checkbox in the editor)
+              await mainWindow.webContents.executeJavaScript("(function(){var boxes=[...document.querySelectorAll('.modal-overlay .editor-checks input[type=checkbox]')]; var c=boxes[boxes.length-1]; if(c && !c.checked){c.click();}})()");
+              await wait(120);
+              // 6. save the modal
+              await mainWindow.webContents.executeJavaScript("(function(){var b=[...document.querySelectorAll('.modal-overlay .modal-actions .btn')].find(function(x){return /Save|Guardar/i.test(x.textContent);}); (b||{click:function(){}}).click();})()");
+              await wait(350);
+              const itemsAfter = await mainWindow.webContents.executeJavaScript("document.querySelectorAll('.today-list .today-item').length");
+              const chartChips = await mainWindow.webContents.executeJavaScript("document.querySelectorAll('.tooth.tooth-has').length");
+              console.log('[smoke] dentist items after chart edit:', itemsAfter, 'teeth-with-tx:', chartChips);
+              if (noFluoride) {
+                // untick the "Fluoride recommended" checkbox in the chart card
+                const before = await mainWindow.webContents.executeJavaScript("(function(){var lab=[...document.querySelectorAll('.dentist-view .care-rec-row .checkbox, .dentist-view .checkbox')].find(function(l){return /Fluoride recommended|Fl.or recomendado/i.test(l.textContent);}); if(!lab)return 'no-label'; var cb=lab.querySelector('input[type=checkbox]'); var was=cb.checked; if(cb.checked){cb.click();} return String(was)+'->'+String(cb.checked);})()");
+                console.log('[smoke] dentist fluoride_recommended toggle:', before);
+                await wait(120);
+              }
+              // exam-state diagnostic: confirm an exam segment is active (save() bails without it)
+              const examActive = await mainWindow.webContents.executeJavaScript("(function(){var b=[...document.querySelectorAll('.dentist-view .seg-btn.active')].map(function(x){return x.textContent.trim();}); return JSON.stringify(b);})()");
+              console.log('[smoke] dentist active seg-btns before save:', examActive);
+              // 7. Save to drive (real button)
+              await mainWindow.webContents.executeJavaScript("(function(){var b=[...document.querySelectorAll('.dentist-view .view-foot .btn-primary')].find(function(x){return /Save to drive|Guardar/i.test(x.textContent);}); (b||{click:function(){}}).click();})()");
+              await wait(1100); // write + merge + alert dialog
+              const dlg = await mainWindow.webContents.executeJavaScript("(function(){var t=document.querySelector('.modal-overlay .modal-title'); var b=document.querySelector('.modal-overlay .modal-body'); return JSON.stringify({title:t?t.textContent:null, body:b?b.textContent:null});})()");
+              console.log('[smoke] dentist post-save dialog:', dlg);
+              // dismiss the "saved" alert if present
+              await mainWindow.webContents.executeJavaScript("(function(){var b=document.querySelector('.modal-overlay .modal-actions .btn-primary'); if(b)b.click();})()");
+              await wait(400);
+              if (!itemsAfter) hadError = true;
+              console.log('[smoke] DENTIST_SAVE done (items=' + itemsAfter + ')');
+            }
+
+            // --- DOWNSTREAM PANEL: at cleaning/fluoride/checkout, load sim drive
+            //     and read the "Treatment this visit (N)" panel the dentist fed. -
+            if (process.env.GDR_SMOKE_PANEL) {
+              await loadSim();
+              // cleaning/fluoride show a collapsible "Treatment this visit (N)" panel;
+              // checkout shows the same treatment under a "Treatment plan" card. Capture
+              // both so any downstream station can be asserted N>0.
+              const panelTxt = await mainWindow.webContents.executeJavaScript("(function(){var s=[...document.querySelectorAll('.panel summary')].find(function(x){return /Treatment this visit|Tratamiento de esta visita/i.test(x.textContent);}); return s?s.textContent:'';})()");
+              const panelN = await mainWindow.webContents.executeJavaScript("(function(){var s=[...document.querySelectorAll('.panel summary')].find(function(x){return /Treatment this visit|Tratamiento de esta visita/i.test(x.textContent);}); if(!s)return -1; var m=s.textContent.match(/\\((\\d+)\\)/); return m?Number(m[1]):-1;})()");
+              // total treatment code chips visible anywhere in the view (panel or card)
+              const chips = await mainWindow.webContents.executeJavaScript("document.querySelectorAll('.code-chip').length");
+              const txTotal = await mainWindow.webContents.executeJavaScript("(function(){var r=document.querySelector('.tx-sum-total .tx-sum-n'); return r?r.textContent:'';})()");
+              // unified count: panel N if present, else parse the tx-summary total's denominator
+              const effectiveN = await mainWindow.webContents.executeJavaScript("(function(){var s=[...document.querySelectorAll('.panel summary')].find(function(x){return /Treatment this visit|Tratamiento de esta visita/i.test(x.textContent);}); if(s){var m=s.textContent.match(/\\((\\d+)\\)/); if(m)return Number(m[1]);} var r=document.querySelector('.tx-sum-total .tx-sum-n'); if(r){var mm=r.textContent.match(/\\/(\\d+)/); if(mm)return Number(mm[1]);} return -1;})()");
+              console.log('[smoke] panel summary:', JSON.stringify(panelTxt));
+              console.log('[smoke] panel treatment count N:', panelN);
+              console.log('[smoke] panel code chips:', chips);
+              console.log('[smoke] panel tx-summary total (done/total):', JSON.stringify(txTotal));
+              console.log('[smoke] panel effective treatment N:', effectiveN);
+              if (effectiveN <= 0) hadError = true;
+            }
+
+            // --- CLEANING station: load sim drive, click "mark cleaning complete",
+            //     then Save to drive. ---------------------------------------------
+            if (process.env.GDR_SMOKE_CLEANING_SAVE) {
+              await loadSim();
+              const onView = await mainWindow.webContents.executeJavaScript("!!document.querySelector('.cleaning-view')");
+              console.log('[smoke] cleaning view loaded:', onView);
+              await mainWindow.webContents.executeJavaScript("(function(){var b=[...document.querySelectorAll('.cleaning-view .btn-primary')].find(function(x){return /complete|Completa|Marcar/i.test(x.textContent) && !/drive|Guardar/i.test(x.textContent);}); if(b)b.click();})()");
+              await wait(300);
+              await mainWindow.webContents.executeJavaScript("(function(){var b=[...document.querySelectorAll('.cleaning-view .view-foot .btn-primary')].find(function(x){return /Save to drive|Guardar/i.test(x.textContent);}); if(b)b.click();})()");
+              await wait(1000);
+              await mainWindow.webContents.executeJavaScript("(function(){var b=document.querySelector('.modal-overlay .modal-actions .btn-primary'); if(b)b.click();})()");
+              await wait(400);
+              console.log('[smoke] CLEANING_SAVE done');
+            }
+
+            // --- FLUORIDE station: load sim drive, tick OH3 + fluoride done,
+            //     then Save to drive. ---------------------------------------------
+            if (process.env.GDR_SMOKE_FLUORIDE_SAVE) {
+              await loadSim();
+              const onView = await mainWindow.webContents.executeJavaScript("!!document.querySelector('.fluoride-view')");
+              console.log('[smoke] fluoride view loaded:', onView);
+              const boxes = await mainWindow.webContents.executeJavaScript("(function(){[...document.querySelectorAll('.fluoride-view .big-checks input[type=checkbox]')].forEach(function(c){if(!c.checked)c.click();}); return document.querySelectorAll('.fluoride-view .big-checks input[type=checkbox]').length;})()");
+              console.log('[smoke] fluoride checkboxes ticked:', boxes);
+              await wait(200);
+              await mainWindow.webContents.executeJavaScript("(function(){var b=[...document.querySelectorAll('.fluoride-view .view-foot .btn-primary')].find(function(x){return /Save to drive|Guardar/i.test(x.textContent);}); if(b)b.click();})()");
+              await wait(1000);
+              await mainWindow.webContents.executeJavaScript("(function(){var b=document.querySelector('.modal-overlay .modal-actions .btn-primary'); if(b)b.click();})()");
+              await wait(400);
+              console.log('[smoke] FLUORIDE_SAVE done');
+            }
+
+            // --- CHECKOUT MARKS: load sim drive, tick care-checklist boxes
+            //     (cleaning/fluoride/OH), choose outcome, click Upload to master. -
+            // GDR_SMOKE_CHECKOUT_MARKS="cleaning,fluoride,oh"  (any subset)
+            // GDR_SMOKE_CHECKOUT_OUTCOME="F" | "NV"  (default F)
+            if (process.env.GDR_SMOKE_CHECKOUT_MARKS) {
+              const want = process.env.GDR_SMOKE_CHECKOUT_MARKS.split(',').map((s) => s.trim()).filter(Boolean);
+              const outcome = process.env.GDR_SMOKE_CHECKOUT_OUTCOME || 'F';
+              await loadSim();
+              const boxes0 = await mainWindow.webContents.executeJavaScript("document.querySelectorAll('.care-checklist input[type=checkbox]').length");
+              console.log('[smoke] checkout care-checklist checkboxes:', boxes0);
+              // Tick cleaning "Completed" (row labelled Cleaning) / fluoride "Completed" / all OH boxes.
+              if (want.includes('cleaning')) {
+                await mainWindow.webContents.executeJavaScript("(function(){var rows=[...document.querySelectorAll('.care-checklist .cc-row')]; var r=rows.find(function(x){return /Cleaning|Limpieza/i.test(x.textContent);}); if(r){var cb=r.querySelector('input[type=checkbox]'); if(cb && !cb.checked)cb.click();}})()");
+                await wait(120);
+              }
+              if (want.includes('fluoride')) {
+                await mainWindow.webContents.executeJavaScript("(function(){var rows=[...document.querySelectorAll('.care-checklist .cc-row')]; var r=rows.find(function(x){return /Fluoride|Fl.or/i.test(x.textContent);}); if(r){var cb=r.querySelector('input[type=checkbox]'); if(cb && !cb.checked)cb.click();}})()");
+                await wait(120);
+              }
+              if (want.includes('oh')) {
+                await mainWindow.webContents.executeJavaScript("(function(){var rows=[...document.querySelectorAll('.care-checklist .cc-row')]; var r=rows.find(function(x){return /OH/.test(x.textContent) && !/Cleaning|Fluoride|Limpieza|Fl.or/i.test(x.textContent);}); if(r){[...r.querySelectorAll('input[type=checkbox]')].forEach(function(cb){if(!cb.checked)cb.click();});}})()");
+                await wait(150);
+              }
+              const checkedNow = await mainWindow.webContents.executeJavaScript("[...document.querySelectorAll('.care-checklist input[type=checkbox]')].map(function(c){return c.checked;})");
+              console.log('[smoke] checkout checkbox states after ticking:', JSON.stringify(checkedNow));
+              // choose outcome
+              await mainWindow.webContents.executeJavaScript(`(function(){var b=[...document.querySelectorAll('.checkout-process .seg-lg .seg-btn')].find(function(x){return ${outcome === 'NV' ? '/Next|NV|próxima|proxima/i' : '/Finished|Terminado|Finalizado|F\\b/i'}.test(x.textContent);}); if(!b){var all=[...document.querySelectorAll('.checkout-process .seg-lg .seg-btn')]; b=${outcome === 'NV' ? 'all[1]' : 'all[0]'};} if(b)b.click();})()`);
+              await wait(150);
+              // click Upload to master
+              await mainWindow.webContents.executeJavaScript("(function(){var b=[...document.querySelectorAll('.checkout-process .upload-card .btn-primary')].find(function(x){return /Upload|Subir|master|maestra/i.test(x.textContent);}); (b||{click:function(){}}).click();})()");
+              await wait(900);
+              const statusTxt = await mainWindow.webContents.executeJavaScript("(function(){var s=document.querySelector('.process-status'); return s?s.textContent:'';})()");
+              const clearEnabled = await mainWindow.webContents.executeJavaScript("(function(){var b=[...document.querySelectorAll('.checkout-process .btn-danger')].find(function(x){return /Clear|Limpiar|Vaciar/i.test(x.textContent);}); return b? !b.hasAttribute('disabled'):false;})()");
+              console.log('[smoke] checkout upload status:', JSON.stringify(statusTxt));
+              console.log('[smoke] checkout clear-drive enabled after upload:', clearEnabled);
+              if (!statusTxt) hadError = true;
+              console.log('[smoke] CHECKOUT_MARKS done');
+            }
+
+            // --- REPORTS: open the Reports tab (admin/checkout), click "All time",
+            //     and read the treatment summary table straight from the running UI
+            //     (this reads the REAL master DB via IPC, not a node tmpdir copy). -
+            if (process.env.GDR_SMOKE_REPORTS) {
+              await mainWindow.webContents.executeJavaScript("(function(){var t=[...document.querySelectorAll('.tab')].find(function(x){return /Reports|Reportes|Informes/i.test(x.textContent);}); if(t)t.click();})()");
+              await wait(500);
+              await mainWindow.webContents.executeJavaScript("(function(){var b=[...document.querySelectorAll('.preset-row .btn')].find(function(x){return /All time|Todo|Siempre/i.test(x.textContent);}); if(b)b.click();})()");
+              await wait(700);
+              const table = await mainWindow.webContents.executeJavaScript("(function(){var rows=[...document.querySelectorAll('.report-table tbody tr')]; return JSON.stringify(rows.map(function(r){var c=r.querySelectorAll('td'); return [c[0]?c[0].textContent:'', c[1]?c[1].textContent:''];}));})()");
+              const dbCount = await mainWindow.webContents.executeJavaScript("(function(){var b=document.querySelector('.count-badge'); return b?b.textContent:'';})()");
+              console.log('[smoke] reports table:', table);
+              console.log('[smoke] reports db patient count badge:', JSON.stringify(dbCount));
+              const nonzero = await mainWindow.webContents.executeJavaScript("document.querySelectorAll('.report-table tbody tr:not(.row-zero)').length");
+              console.log('[smoke] reports non-zero rows:', nonzero);
+            }
           }
         } catch (e) { hadError = true; console.error('[smoke] eval failed', e); }
         console.log(hadError ? '[smoke] LAUNCH FAILED' : '[smoke] LAUNCH OK');
@@ -354,7 +559,18 @@ function registerIpc() {
   ipcMain.handle('drive:list', async () => ok(await drive.listDrives()));
   ipcMain.handle('drive:status', (_e, p) => ok(drive.driveStatus(p)));
   ipcMain.handle('drive:read', (_e, p) => drive.readPatient(p));
-  ipcMain.handle('drive:write', (_e, { drivePath, patient }) => drive.writePatient(drivePath, patient));
+  ipcMain.handle('drive:write', (_e, { drivePath, patient }) => {
+    // TEST-ONLY diagnostic (env-gated): log what the renderer is actually asking
+    // to persist, so an E2E run can prove the in-memory edits reach the drive.
+    if (process.env.GDR_SMOKE_LAUNCH) {
+      try {
+        const vs = (patient && patient.visits) || [];
+        const lv = vs[vs.length - 1] || {};
+        console.log('[smoke] IPC drive:write last-visit items=' + ((lv.treatment_items || []).length) + ' exam=' + lv.exam_type + ' dentist=' + (lv.station_status && lv.station_status.dentist));
+      } catch (_) {}
+    }
+    return drive.writePatient(drivePath, patient);
+  });
   ipcMain.handle('drive:clear', (_e, p) => drive.clearDrive(p));
   ipcMain.handle('drive:pickFolder', async () => {
     const res = await dialog.showOpenDialog(mainWindow, {

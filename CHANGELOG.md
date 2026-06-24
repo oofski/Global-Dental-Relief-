@@ -4,6 +4,25 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.1.6 — 2026-06-24
+- **Fixed a critical data-loss bug: work entered at the chair now actually
+  saves.** A testing pass driving the real app found that the Dentist, Cleaning,
+  Fluoride and Checkout screens were editing a *detached copy* of the visit, so
+  newly-charted treatment, OH/cleaning/fluoride marks, and the checkout care
+  checklist could be silently discarded on save. The stations now edit the live
+  patient record, so everything persists to the flash drive, the master
+  database, and the reports.
+  - Root cause: those screens read the working visit through the secure
+    main/renderer bridge, which hands back a *clone* (not the original) — edits
+    to it never reached the record that gets written. Fixed by resolving the
+    working visit locally in the UI and removing the bridge shortcut so the
+    mistake can't recur.
+- Added a full **end-to-end UI proof** (`npm run e2e`) that launches the real
+  app and drives an actual clinician flow — chart a tooth → save → confirm it
+  lands on the drive, the master DB, downstream stations, the checkout
+  checklist, and the reports table. All 20 checks pass (the 5 that exposed this
+  bug now pass too). Test-only hooks are env-gated and never affect normal use.
+
 ## v1.1.5 — 2026-06-24
 - Full data-flow audit + integration testing of the station → station → checkout →
   reports pipeline (new `scripts/flow-test.js`, 198 assertions: happy path,

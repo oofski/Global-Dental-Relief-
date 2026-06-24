@@ -1,5 +1,5 @@
 /* Check-In station (spec 5.1, 7.1, 7.2). */
-import { h, mount, field, checkbox, toast, alertDialog, fmtDate, spinner } from '../util.js';
+import { h, mount, field, checkbox, toast, alertDialog, fmtDate, spinner, lastVisit } from '../util.js';
 import { T, PT } from '../i18n/index.js';
 import { medForm } from '../components/medform.js';
 import { clearPatientsButton } from '../components/cleardata.js';
@@ -334,7 +334,7 @@ export function renderCheckin(container, ctx) {
 
   function screenReturningConfirm() {
     const p = W.existing;
-    const lastV = window.api.model.lastVisit(p);
+    const lastV = lastVisit(p);
     const pending = lastV && lastV.visit_outcome === 'NV'
       ? (lastV.treatment_items || []).filter((t) => !t.complete)
       : [];

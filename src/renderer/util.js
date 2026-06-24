@@ -31,6 +31,18 @@ export function mount(node, ...children) {
   return node;
 }
 
+// Return the latest visit on a patient as a LIVE reference into patient.visits[].
+// IMPORTANT: do NOT use window.api.model.lastVisit() from the renderer. That call
+// crosses the contextBridge (contextIsolation: true), which structured-clones the
+// argument and the return value, so the visit you get back is detached from the
+// renderer's own patient object. Mutations to it (exam, treatment, OH/cleaning/
+// fluoride, checkout marks) would then be silently dropped when the patient is
+// written to the drive / merged to master. This local helper keeps the reference
+// live so station edits actually persist.
+export function lastVisit(p) {
+  return p && p.visits && p.visits.length ? p.visits[p.visits.length - 1] : null;
+}
+
 export function fmtDate(iso) {
   if (!iso) return '—';
   const d = iso.length <= 10 ? iso : iso.slice(0, 10);
