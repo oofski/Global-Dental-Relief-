@@ -102,6 +102,10 @@ export const es = {
   prior_paper_history: 'Historia previa (registros en papel)',
   prior_paper_hint: 'Transcriba aquí información clave de la historia en papel (tratamientos previos, fechas, notas).',
   proceed_medical: 'Continuar a historia médica',
+  db_sync_hint: 'Cargue la base de datos de salida/maestra desde una memoria USB para que los pacientes existentes aparezcan aquí.',
+  returning_med_optional: 'Este es un paciente existente — su historia médica ya está registrada. Actualizarla es opcional; puede confirmar y continuar sin volver a ingresarla.',
+  update_medical_optional: 'Actualizar historia médica (opcional)',
+  confirm_keep_medical: 'Confirmar — conservar historia médica',
 
   // Medical condition labels (4.2)
   med_asthma: 'Asma / dificultad para respirar / tos',

@@ -4,6 +4,25 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.3.0 — 2026-06-24
+- **Returning patients from the shared database.** A patient who was seen before
+  can now be pulled up at Check-In by name instead of being re-registered:
+  - **Front desk can now import the database.** New **"Import patient database"**
+    (and **"Export"**) buttons on the Check-In screen let the front desk load the
+    master database that Checkout exported to a USB stick. Once imported, returning
+    patients show up in the returning-patient search by name or number.
+    (Import **merges** — it never overwrites patients already on the front-desk
+    computer — and keeps patient numbering consistent.)
+  - **No re-entering medical history for returning patients.** After you pick a
+    returning patient, their record (including medical history) loads, and you can
+    **"Confirm — keep medical history"** and go straight to assigning a drive.
+    Updating the medical history is now clearly optional, with a note explaining it.
+- Import/export of the database is limited to records roles (front desk, checkout,
+  admin); the chair stations can't trigger it.
+- New `npm run returning` suite (63 assertions: export→import→search→full record,
+  merge/no-loss, counter consistency, bad-file handling). Full regression green:
+  smoke 16, flow 198, feature 54, returning 63, e2e 20 (real app).
+
 ## v1.2.1 — 2026-06-24
 - **Auto-update is now visible and reliable.** Previously the app downloaded new
   versions silently and only showed it inside the admin Settings page, so most

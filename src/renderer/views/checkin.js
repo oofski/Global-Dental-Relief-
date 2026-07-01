@@ -45,11 +45,35 @@ export function renderCheckin(container, ctx) {
           h('span', { text: T.existing_patient })
         ])
       ]),
+      h('div', { class: 'db-sync-zone' }, [
+        h('div', { class: 'db-sync-label', text: T.db_sync_hint }),
+        h('div', { class: 'db-sync-actions' }, [
+          h('button', { class: 'btn btn-secondary btn-sm', onClick: importDb }, '⬆ ' + T.import_master),
+          h('button', { class: 'btn btn-ghost btn-sm', onClick: exportDb }, '⬇ ' + T.export_master_json)
+        ])
+      ]),
       h('div', { class: 'danger-zone danger-zone-center' }, [
         h('div', { class: 'danger-zone-label', text: T.clear_new_ledger_hint }),
         clearPatientsButton(null, { small: true })
       ])
     ]);
+  }
+
+  // ---- Front-desk database sync (import checkout/master DB from USB, export local backup) ----
+  async function importDb() {
+    const res = await window.api.db.importMaster();
+    if (!res.ok) { toast(T.error, 'error'); return; }
+    if (!res.data) return; // user cancelled the file picker — no-op
+    const r = res.data;
+    if (!r.ok) { toast(T.error, 'error'); return; }
+    toast(T.imported_result.replace('{added}', r.added).replace('{updated}', r.updated).replace('{total}', r.total), 'success', 6000);
+  }
+
+  async function exportDb() {
+    const res = await window.api.report.exportMaster('json');
+    if (!res.ok) { toast(T.error, 'error'); return; }
+    if (!res.data || !res.data.file) return; // cancelled — no-op
+    toast(T.exported_to + ' ' + res.data.file, 'success', 6000);
   }
 
   // ---- Screen B: Registration (new) ----
@@ -344,13 +368,14 @@ export function renderCheckin(container, ctx) {
         h('div', { class: 'pending-title', text: '⚠ ' + T.pending_treatment }),
         h('div', { class: 'pending-list' }, pending.map((t) => h('span', { class: 'code-chip', text: window.api.codes.formatItem(t) })))
       ]) : null,
+      h('div', { class: 'info-banner', text: T.returning_med_optional }),
       h('div', { class: 'prior-history' }, [
         priorHistoryField(p)
       ])
     ], [
       h('button', { class: 'btn btn-ghost', onClick: screenSearch }, T.back),
-      h('button', { class: 'btn btn-secondary', onClick: () => { W.medChanged = true; screenMedical(); } }, T.proceed_medical),
-      h('button', { class: 'btn btn-primary', onClick: () => { W.medChanged = false; screenDrive(); } }, T.confirm_identity)
+      h('button', { class: 'btn btn-secondary', onClick: () => { W.medChanged = true; screenMedical(); } }, T.update_medical_optional),
+      h('button', { class: 'btn btn-primary', onClick: () => { W.medChanged = false; screenDrive(); } }, T.confirm_keep_medical)
     ]);
   }
 

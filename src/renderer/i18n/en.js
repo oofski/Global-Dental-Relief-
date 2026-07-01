@@ -103,6 +103,10 @@ export const en = {
   prior_paper_history: 'Prior history (paper records)',
   prior_paper_hint: 'Transcribe key information from the paper chart here (prior treatments, dates, notes).',
   proceed_medical: 'Continue to medical history',
+  db_sync_hint: 'Load the checkout/master database from a USB drive so returning patients appear here.',
+  returning_med_optional: 'This is a returning patient — their medical history is on file. Updating it is optional; you can confirm and continue without re-entering it.',
+  update_medical_optional: 'Update medical history (optional)',
+  confirm_keep_medical: 'Confirm — keep medical history',
 
   // Medical condition labels (4.2)
   med_asthma: 'Asthma / trouble breathing / cough',

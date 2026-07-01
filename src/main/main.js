@@ -637,12 +637,14 @@ function registerIpc() {
     } catch (e) { return fail('export_failed', String(e.message || e)); }
   });
   ipcMain.handle('report:exportMaster', (_e, { format }) => {
+    if (!requireRecordsAccess()) return fail('forbidden');
     try {
       const file = format === 'csv' ? reports.exportMasterCSV() : reports.exportMasterJSON();
       return ok({ file });
     } catch (e) { return fail('export_failed', String(e.message || e)); }
   });
   ipcMain.handle('db:importMaster', async () => {
+    if (!requireRecordsAccess()) return fail('forbidden');
     const res = await dialog.showOpenDialog(mainWindow, {
       title: uiText('import_master'),
       properties: ['openFile'],
