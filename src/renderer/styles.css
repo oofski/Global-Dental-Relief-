@@ -97,7 +97,7 @@ h1,h2,h3{letter-spacing:-.01em}
     repeating-linear-gradient(90deg, rgba(255,255,255,.045) 0 1px, transparent 1px 40px),
     linear-gradient(135deg,#15455f,#1c5e80 55%,#2378a0)}
 .login-card{background:var(--card);border-radius:var(--r-lg);padding:36px 34px 26px;width:412px;max-width:100%;
-  box-shadow:var(--sh-3);text-align:center;border-top:4px solid var(--blue)}
+  box-shadow:var(--sh-3);text-align:center;border-top:4px solid var(--blue-500)}
 .login-logo{width:64px;height:64px;border-radius:12px;border:1px solid var(--line);box-shadow:var(--sh-1)}
 .login-lockup{width:248px;max-width:84%;height:auto;display:block;margin:0 auto 10px}
 .login-title{margin:10px 0 0;font-size:16px;color:var(--blue-900);font-weight:700;line-height:1.3}
@@ -161,10 +161,13 @@ h1,h2,h3{letter-spacing:-.01em}
 .choice-ret{background:linear-gradient(180deg,var(--blue-600),var(--blue-800))}
 .choice-icon{font-size:42px}
 
-.assigned-banner{background:var(--blue-50);border:1px solid var(--blue-100);border-left:4px solid var(--blue);border-radius:var(--r-sm);
-  padding:14px 16px;display:flex;align-items:center;gap:10px;margin-bottom:6px}
+/* Brand-blue (#64afe1) surfaces ALWAYS pair with dark navy text (~6:1 AA);
+   never put white/light text on --blue-500. */
+.assigned-banner{background:var(--blue-500);border:1px solid var(--blue-600);border-left:4px solid var(--blue-700);border-radius:var(--r-sm);
+  padding:14px 16px;display:flex;align-items:center;gap:10px;margin-bottom:6px;color:var(--navy)}
 .big-number{font-size:23px;color:var(--blue-800);font-weight:800}
-.info-banner{background:var(--blue-50);border:1px solid var(--blue-100);border-left:4px solid var(--blue);border-radius:var(--r-sm);padding:12px 15px;font-weight:600;color:var(--blue-800)}
+.assigned-banner .big-number{color:var(--navy)}
+.info-banner{background:var(--blue-500);border:1px solid var(--blue-600);border-left:4px solid var(--blue-700);border-radius:var(--r-sm);padding:12px 15px;font-weight:600;color:var(--navy)}
 .warn-banner{background:var(--nv-soft);border:1px solid #f3cba2;border-left:4px solid var(--nv);border-radius:var(--r-sm);padding:12px 15px;color:#8f4413;font-weight:600}
 .big-info{background:var(--card);border-radius:var(--r);padding:42px;text-align:center;font-size:17px;color:var(--muted);
   box-shadow:var(--sh-1);border:1px dashed var(--line-2)}
@@ -197,7 +200,7 @@ h1,h2,h3{letter-spacing:-.01em}
 
 /* ---- Summary card ---- */
 .summary-card{display:flex;align-items:center;gap:16px;background:var(--card);border-radius:var(--r);padding:16px 18px;
-  box-shadow:var(--sh-1);margin-bottom:14px;border:1px solid var(--line);border-left:4px solid var(--blue)}
+  box-shadow:var(--sh-1);margin-bottom:14px;border:1px solid var(--line);border-left:4px solid var(--blue-500)}
 .summary-num{font-size:25px;font-weight:800;color:var(--blue);min-width:82px;letter-spacing:-.02em}
 .summary-name{font-size:18px;font-weight:720}
 .summary-meta{color:var(--muted);font-size:13.5px;margin-top:2px}
@@ -211,7 +214,7 @@ h1,h2,h3{letter-spacing:-.01em}
 .visit-line-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .visit-codes{font-family:'Cascadia Code',Consolas,monospace;font-size:13px;margin-top:5px;color:var(--ink-2)}
 .visit-notes{font-size:13px;color:var(--muted);margin-top:3px}
-.tag{background:var(--blue-50);color:var(--blue-800);padding:2px 9px;border-radius:4px;font-size:11.5px;font-weight:650;border:1px solid var(--blue-100)}
+.tag{background:var(--blue-500);color:var(--navy);padding:2px 9px;border-radius:4px;font-size:11.5px;font-weight:650;border:1px solid var(--blue-600)}
 .tag-F{background:var(--green-soft);color:var(--green);border-color:#c2e6cf}
 .tag-NV{background:var(--nv-soft);color:var(--nv);border-color:#f3cba2}
 
@@ -289,8 +292,8 @@ h1,h2,h3{letter-spacing:-.01em}
 .fl-block-banner .fl-block-msg{color:#8f211a;font-weight:600;font-size:14px}
 
 /* no-dentist-exam banner (FLOW-5) — subtle info notice */
-.no-exam-banner{background:var(--blue-50);border:1px solid var(--blue-100);border-left:4px solid var(--blue-500);border-radius:var(--r-sm);
-  padding:11px 15px;margin-bottom:14px;color:var(--blue-800);font-weight:600;font-size:13.5px}
+.no-exam-banner{background:var(--blue-500);border:1px solid var(--blue-600);border-left:4px solid var(--blue-700);border-radius:var(--r-sm);
+  padding:11px 15px;margin-bottom:14px;color:var(--navy);font-weight:600;font-size:13.5px}
 
 /* App-wide software-update banner (visible to every role on every screen) */
 #update-banner-host{position:sticky;top:0;z-index:60}
@@ -366,7 +369,7 @@ h1,h2,h3{letter-spacing:-.01em}
 .tab{background:none;border:none;padding:13px 20px;font-size:13.5px;font-weight:650;color:var(--ink-2);cursor:pointer;
   border-bottom:3px solid transparent;transition:.12s}
 .tab:hover{background:var(--blue-50);color:var(--blue-800)}
-.tab.active{color:var(--blue-800);border-bottom-color:var(--blue);background:var(--blue-50)}
+.tab.active{color:var(--navy);border-bottom-color:var(--blue-700);background:var(--blue-500)}
 
 /* sub-nav */
 .subnav{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
@@ -410,6 +413,17 @@ h1,h2,h3{letter-spacing:-.01em}
 .report-table tbody tr:hover{background:var(--blue-50)}
 .num-cell{text-align:right;font-weight:750;font-variant-numeric:tabular-nums}
 .row-zero{color:var(--muted)}
+
+/* clinic summary grid (paper stat sheet: rows × clinic days + Total) */
+.clinic-summary{margin-top:26px}
+.clinic-summary-scroll{overflow-x:auto}
+.clinic-summary-grid{width:auto;min-width:100%}
+.clinic-summary-grid th,.clinic-summary-grid td{white-space:nowrap}
+.clinic-summary-grid thead th{background:var(--blue-500);color:var(--navy);border-bottom:1.5px solid var(--blue-700)}
+.clinic-summary-grid .grid-parent .grid-label{font-weight:700}
+.clinic-summary-grid .grid-indent .grid-label{padding-left:34px;color:var(--ink-2)}
+.clinic-summary-grid .grid-total{border-left:1.5px solid var(--line-2);font-weight:800}
+.clinic-summary-grid .cell-zero{color:#5f7080;font-weight:400} /* AA >=4.5:1 on white/even/hover rows */
 .report-lang-note{font-size:12px;margin:10px 0 0;color:var(--muted)}
 .export-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
 .export-status{margin-top:12px}
@@ -438,7 +452,7 @@ h1,h2,h3{letter-spacing:-.01em}
 
 /* ---- Modal ---- */
 .modal-overlay{position:fixed;inset:0;background:rgba(10,21,52,.52);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:150;padding:20px;animation:fade .14s ease}
-.modal-box{background:#fff;border-radius:var(--r);padding:24px;max-width:90vw;max-height:90vh;overflow:auto;box-shadow:var(--sh-3);border-top:4px solid var(--blue)}
+.modal-box{background:#fff;border-radius:var(--r);padding:24px;max-width:90vw;max-height:90vh;overflow:auto;box-shadow:var(--sh-3);border-top:4px solid var(--blue-500)}
 .modal-title{margin:0 0 14px;color:var(--blue-900);font-weight:730}
 .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
 

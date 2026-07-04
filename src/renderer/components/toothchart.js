@@ -48,7 +48,10 @@ function toothButton(ctx, tooth, system) {
         if (ctx.onChange) ctx.onChange();
         return;
       }
-      const res = await editTooth(visit, tooth, system);
+      // Restricted charts (e.g. hygienist sealant/SDF): an existing item whose
+      // type is not allowed stays visible but read-only — no editor opens.
+      if (ctx.allowedTreatments && item && !ctx.allowedTreatments.includes(item.treatment_type)) return;
+      const res = await editTooth(visit, tooth, system, ctx.allowedTreatments);
       if (res.action === 'save') {
         const ex = findItem(visit, tooth);
         if (ex) Object.assign(ex, res.item); else visit.treatment_items.push(res.item);
@@ -68,14 +71,14 @@ function row(ctx, teeth, system) {
   return h('div', { class: 'tooth-row' }, teeth.map((t) => toothButton(ctx, t, system)));
 }
 
-export function toothChart(visit, { readOnly = false, onChange } = {}) {
+export function toothChart(visit, { readOnly = false, onChange, allowedTreatments } = {}) {
   if (!visit.treatment_items) visit.treatment_items = [];
   if (!visit.tooth_conditions) visit.tooth_conditions = {};
   if (!visit.chart_view) visit.chart_view = 'hybrid';
   let mode = 'treatment';
 
   const host = h('div', { class: 'tooth-chart-wrap' });
-  const ctx = { visit, readOnly, mode: () => mode, rerender, onChange };
+  const ctx = { visit, readOnly, mode: () => mode, rerender, onChange, allowedTreatments };
 
   function archRows() {
     const v = visit.chart_view;
@@ -139,16 +142,22 @@ export function toothChart(visit, { readOnly = false, onChange } = {}) {
 }
 
 // ---- Tooth treatment editor modal --------------------------------------
-function editTooth(visit, tooth, system) {
+function editTooth(visit, tooth, system, allowedTreatments) {
   const existing = findItem(visit, tooth);
   const item = existing
     ? JSON.parse(JSON.stringify(existing))
     : window.api.model.newTreatmentItem(tooth);
   item.tooth = tooth;
 
+  // Restricted charts only offer the allowed treatment types (e.g. sealant/SDF
+  // for the hygienist); without the option, all treatments are offered.
+  const types = allowedTreatments
+    ? C.TREATMENTS.filter((tr) => allowedTreatments.includes(tr.key))
+    : C.TREATMENTS;
+
   return new Promise((resolve) => {
     const state = {
-      treatment_type: item.treatment_type || 'restoration',
+      treatment_type: types.some((tr) => tr.key === item.treatment_type) ? item.treatment_type : types[0].key,
       surfaces: new Set(item.surfaces || []),
       surgical: !!item.surgical,
       treating_today: item.treating_today !== false,
@@ -161,13 +170,13 @@ function editTooth(visit, tooth, system) {
       preview.textContent = C.formatItem(tmp) || `${T.tooth} ${tooth}`;
     }
 
-    const typeRow = h('div', { class: 'seg' }, C.TREATMENTS.map((tr) =>
+    const typeRow = h('div', { class: 'seg' }, types.map((tr) =>
       h('button', {
         class: 'seg-btn' + (state.treatment_type === tr.key ? ' active' : ''),
         type: 'button',
         onClick: () => {
           state.treatment_type = tr.key;
-          [...typeRow.children].forEach((c, i) => c.classList.toggle('active', C.TREATMENTS[i].key === tr.key));
+          [...typeRow.children].forEach((c, i) => c.classList.toggle('active', types[i].key === tr.key));
           surfacesWrap.style.display = tr.needsSurfaces ? '' : 'none';
           surgicalWrap.style.display = tr.key === 'extraction' ? '' : 'none';
           refreshPreview();

@@ -166,7 +166,6 @@ export const en = {
   treatment_notes: 'Treatment notes (codes)',
   treatment_notes_hint: 'E.g.: 19-OB, 18-ext, a-ext, 30-SDF, 31-seal',
   today_selection: 'Today’s treatment',
-  today_rule: 'GDR rule: maximum 1–2 quadrants, maximum 30 minutes per visit.',
   oh2_label: 'OH2 — Oral health lesson at the chair completed',
   no_treatment_items: 'No treatments in the plan yet.',
 
@@ -184,7 +183,6 @@ export const en = {
   fluoride_warn_extraction: 'This patient had an extraction. Fluoride may not be applicable — confirm before continuing.',
   fluoride_blocked_title: 'Fluoride not recommended',
   fluoride_blocked_msg: 'Fluoride is not recommended for this patient after an adult (permanent) tooth extraction. Do not apply fluoride unless a clinician overrides this.',
-  fluoride_adult_ext_hint: 'Fluoride is recommended for everyone EXCEPT after an adult (permanent) tooth extraction. Baby-tooth extractions still get fluoride. Uncheck manually if needed.',
 
   // Checkout
   checkout_title: 'Checkout / Master',
@@ -381,6 +379,36 @@ export const en = {
   fl_word: 'Fluoride',
   rpt_cleaning_recommended: 'Cleanings recommended',
   rpt_fluoride_recommended: 'Fluoride recommended',
+
+  // Clinic summary grid (on-screen, staff UI; exported files use report language)
+  grid_title: 'Dental Clinic Summary Statistics',
+  grid_col_total: 'Total',
+  grid_patients_total: 'Patients',
+  grid_patients_male: 'Male',
+  grid_patients_female: 'Female',
+  grid_patients_age_18_under: '18/under',
+  grid_patients_age_19_older: '19/older',
+  grid_exams: 'Exams',
+  grid_cleaning_prophy: 'CL - Prophy',
+  grid_cleaning_debridement: 'Debridement',
+  grid_fluoride: 'Fluoride',
+  grid_sealants: 'Sealants',
+  grid_fillings_total: 'Fillings',
+  grid_fillings_1_surface: '1 surface',
+  grid_fillings_2_surface: '2 surface',
+  grid_fillings_3_surface: '3 surface',
+  grid_fillings_4_surface: '4 surface',
+  grid_composites_total: 'Composites',
+  grid_composites_1_surface: '1 surface',
+  grid_composites_2_surface: '2 surface',
+  grid_composites_3_surface: '3 surface',
+  grid_extractions_total: 'Extractions',
+  grid_extractions_primary: 'Primary',
+  grid_extractions_adult: 'Adult',
+  grid_extractions_surgical: 'Surgical',
+  grid_sdf_apply: 'SDF apply',
+  grid_nt: 'NT',
+  grid_oh_lessons: 'OH 1,2,3',
 
   // Clear patients / new ledger
   clear_patients: 'Clear patients',

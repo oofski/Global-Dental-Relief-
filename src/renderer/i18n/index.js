@@ -30,4 +30,13 @@ export const PT = DICTS[PATIENT_LANG];
 // Human-readable language names for small UI notes.
 export const LANG_NAMES = { en: 'English', es: 'Español' };
 
+// Spelled-out month names per language for long-form displayed dates
+// (util.js fmtDate / fmtDateTime). Raw ISO values are never affected.
+export const MONTHS = {
+  en: ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'],
+  es: ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+};
+
 export default T;

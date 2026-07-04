@@ -165,7 +165,6 @@ export const es = {
   treatment_notes: 'Notas de tratamiento (códigos)',
   treatment_notes_hint: 'Ej.: 19-OB, 18-ext, a-ext, 30-SDF, 31-seal',
   today_selection: 'Tratamiento de hoy',
-  today_rule: 'Regla GDR: máximo 1–2 cuadrantes, máximo 30 minutos por visita.',
   oh2_label: 'OH2 — Lección de salud bucal en la silla completada',
   no_treatment_items: 'No hay tratamientos en el plan todavía.',
 
@@ -183,7 +182,6 @@ export const es = {
   fluoride_warn_extraction: 'Este paciente tuvo una extracción. El flúor puede no ser aplicable — confirme antes de continuar.',
   fluoride_blocked_title: 'Flúor no recomendado',
   fluoride_blocked_msg: 'No se recomienda flúor para este paciente después de una extracción de diente adulto (permanente). No aplique flúor a menos que un clínico lo autorice.',
-  fluoride_adult_ext_hint: 'El flúor se recomienda para todos EXCEPTO después de una extracción de diente adulto (permanente). Las extracciones de dientes de leche sí reciben flúor. Desmarque manualmente si es necesario.',
 
   // Checkout
   checkout_title: 'Salida / Maestro',
@@ -380,6 +378,36 @@ export const es = {
   fl_word: 'Flúor',
   rpt_cleaning_recommended: 'Limpiezas recomendadas',
   rpt_fluoride_recommended: 'Flúor recomendado',
+
+  // Cuadro de resumen de la clínica (en pantalla; los archivos exportados usan el idioma de reportes)
+  grid_title: 'Resumen Estadístico de la Clínica Dental',
+  grid_col_total: 'Total',
+  grid_patients_total: 'Pacientes',
+  grid_patients_male: 'Masculino',
+  grid_patients_female: 'Femenino',
+  grid_patients_age_18_under: '18 años o menos',
+  grid_patients_age_19_older: '19 años o más',
+  grid_exams: 'Exámenes',
+  grid_cleaning_prophy: 'Limpieza - Profilaxis',
+  grid_cleaning_debridement: 'Debridamiento',
+  grid_fluoride: 'Flúor',
+  grid_sealants: 'Sellantes',
+  grid_fillings_total: 'Empastes',
+  grid_fillings_1_surface: '1 superficie',
+  grid_fillings_2_surface: '2 superficies',
+  grid_fillings_3_surface: '3 superficies',
+  grid_fillings_4_surface: '4 superficies',
+  grid_composites_total: 'Composites',
+  grid_composites_1_surface: '1 superficie',
+  grid_composites_2_surface: '2 superficies',
+  grid_composites_3_surface: '3 superficies',
+  grid_extractions_total: 'Extracciones',
+  grid_extractions_primary: 'Primarias',
+  grid_extractions_adult: 'Adultas',
+  grid_extractions_surgical: 'Quirúrgicas',
+  grid_sdf_apply: 'Aplicaciones de SDF',
+  grid_nt: 'NT',
+  grid_oh_lessons: 'OH 1,2,3',
 
   // Borrar pacientes / nuevo registro
   clear_patients: 'Borrar pacientes',

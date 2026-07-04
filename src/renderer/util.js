@@ -1,5 +1,5 @@
 /* DOM + UI helpers for the renderer (vanilla, no framework). */
-import { T } from './i18n/index.js';
+import { T, UI_LANG, MONTHS } from './i18n/index.js';
 
 export function h(tag, attrs = {}, children = []) {
   const el = document.createElement(tag);
@@ -43,18 +43,30 @@ export function lastVisit(p) {
   return p && p.visits && p.visits.length ? p.visits[p.visits.length - 1] : null;
 }
 
+// Spell out a date in the staff UI language ("May 1, 2026" / "1 de mayo de 2026").
+// Built from numeric Y/M/D parts — NEVER via toLocaleDateString on a date-only
+// ISO string, which is parsed as UTC and shifts a day in negative-offset zones.
+function spellDate(y, m, day) {
+  const months = MONTHS[UI_LANG] || MONTHS.en;
+  const name = months[m - 1];
+  if (!y || !day || !name) return null;
+  return UI_LANG === 'es' ? `${day} de ${name} de ${y}` : `${name} ${day}, ${y}`;
+}
+
 export function fmtDate(iso) {
   if (!iso) return '—';
   const d = iso.length <= 10 ? iso : iso.slice(0, 10);
-  const [y, m, day] = d.split('-');
-  return `${day}/${m}/${y}`;
+  const [y, m, day] = d.split('-').map(Number);
+  return spellDate(y, m, day) || d;
 }
 
 export function fmtDateTime(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
   if (isNaN(d)) return iso;
-  return d.toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' });
+  const date = spellDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
+  const time = d.toLocaleTimeString(UI_LANG, { hour: '2-digit', minute: '2-digit' });
+  return date ? `${date}, ${time}` : d.toLocaleString(UI_LANG, { dateStyle: 'short', timeStyle: 'short' });
 }
 
 export function timeSince(iso) {

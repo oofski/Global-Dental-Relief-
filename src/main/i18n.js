@@ -4,7 +4,9 @@
  *
  * GENERATED reports and exports use this language (config.report_language,
  * default Spanish) — independent of the app UI language. Add a language by
- * adding a parallel block; every `rows` key must match reports.js ROW_KEYS.
+ * adding a parallel block; every `rows` key must match reports.js ROW_KEYS,
+ * every `grid.rows` key must match reports.js GRID_ROW_SPECS, and `months`
+ * must list the 12 spelled-out month names (long-form report dates).
  */
 
 const STRINGS = {
@@ -21,6 +23,40 @@ const STRINGS = {
     col_type: 'Tipo de tratamiento',
     col_count: 'Cantidad',
     sheet_name: 'Resumen',
+    months: ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'],
+    grid: {
+      title: 'Resumen Estadístico de la Clínica Dental',
+      col_total: 'Total',
+      rows: {
+        patients_total: 'Pacientes',
+        patients_male: 'Masculino',
+        patients_female: 'Femenino',
+        patients_age_18_under: '18 años o menos',
+        patients_age_19_older: '19 años o más',
+        exams: 'Exámenes',
+        cleaning_prophy: 'Limpieza - Profilaxis',
+        cleaning_debridement: 'Debridamiento',
+        fluoride: 'Flúor',
+        sealants: 'Sellantes',
+        fillings_total: 'Empastes',
+        fillings_1_surface: '1 superficie',
+        fillings_2_surface: '2 superficies',
+        fillings_3_surface: '3 superficies',
+        fillings_4_surface: '4 superficies',
+        composites_total: 'Composites',
+        composites_1_surface: '1 superficie',
+        composites_2_surface: '2 superficies',
+        composites_3_surface: '3 superficies',
+        extractions_total: 'Extracciones',
+        extractions_primary: 'Primarias',
+        extractions_adult: 'Adultas',
+        extractions_surgical: 'Quirúrgicas',
+        sdf_apply: 'Aplicaciones de SDF',
+        nt: 'NT',
+        oh_lessons: 'OH 1,2,3'
+      }
+    },
     rows: {
       fill_single: 'Empastes de una superficie',
       fill_double: 'Empastes de dos superficies',
@@ -54,6 +90,40 @@ const STRINGS = {
     col_type: 'Treatment type',
     col_count: 'Count',
     sheet_name: 'Summary',
+    months: ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'],
+    grid: {
+      title: 'Dental Clinic Summary Statistics',
+      col_total: 'Total',
+      rows: {
+        patients_total: 'Patients',
+        patients_male: 'Male',
+        patients_female: 'Female',
+        patients_age_18_under: '18/under',
+        patients_age_19_older: '19/older',
+        exams: 'Exams',
+        cleaning_prophy: 'CL - Prophy',
+        cleaning_debridement: 'Debridement',
+        fluoride: 'Fluoride',
+        sealants: 'Sealants',
+        fillings_total: 'Fillings',
+        fillings_1_surface: '1 surface',
+        fillings_2_surface: '2 surface',
+        fillings_3_surface: '3 surface',
+        fillings_4_surface: '4 surface',
+        composites_total: 'Composites',
+        composites_1_surface: '1 surface',
+        composites_2_surface: '2 surface',
+        composites_3_surface: '3 surface',
+        extractions_total: 'Extractions',
+        extractions_primary: 'Primary',
+        extractions_adult: 'Adult',
+        extractions_surgical: 'Surgical',
+        sdf_apply: 'SDF apply',
+        nt: 'NT',
+        oh_lessons: 'OH 1,2,3'
+      }
+    },
     rows: {
       fill_single: 'Single-surface fillings',
       fill_double: 'Double-surface fillings',

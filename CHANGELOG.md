@@ -4,6 +4,36 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.3.1 — 2026-07-01
+Changes from the clinic's week-summary review call.
+- **Dates are spelled out** (e.g. "July 1, 2026" / "1 de julio de 2026") everywhere
+  they're shown to people — screens and report exports — so month/day can't be
+  confused. Stored data stays in the machine format.
+- **Removed the "GDR rule: maximum 1–2 quadrants" line** from the dentist screen
+  (pacing is managed verbally by the trip leader).
+- **Removed the fluoride recommendation note** from the dentist and fluoride
+  screens (soft rule, was confusing). The manual fluoride checkbox and the hard
+  block when a dentist explicitly says "no fluoride" both remain.
+- **Hygienists can now add sealants and SDF.** The cleaning station gets the same
+  hybrid tooth chart, restricted so the hygienist can only chart **sealant or SDF**
+  per tooth (the doctor's fillings/extractions show but stay read-only). Added
+  work saves and flows to reports exactly like the doctor's.
+- **Notes at the hygienist station:** a collapsible treatment-notes section; newly
+  charted sealant/SDF codes are appended without overwriting the doctor's notes.
+- **Clinic summary sheet in Reports.** The full "Dental Clinic Summary Statistics"
+  grid from the paper form — Patients (Male/Female, 18-under/19-older), Exams,
+  Prophy, Debridement, Fluoride, Sealants, Fillings (1–4 surface), Composites
+  (1–3 surface), Extractions (Primary/Adult/Surgical), SDF, NT, OH 1/2/3 —
+  computed **per clinic day with a Total column**, on screen and in the CSV/XLSX
+  exports. Daily numbers add up into the weekly total.
+- **Reports count treatment performed, not prescribed** — verified end to end (3
+  fillings Monday + 2 Friday = 5, no partial-visit double-counting).
+- **Brand blue is now RGB 100/175/225** (`#64afe1`) across the interface, with
+  dark navy text on blue surfaces to stay readable (WCAG AA).
+- Quality: new `npm run v131` suite (121 assertions for the summary grid + the
+  above). Full regression green: smoke 16, flow 198, feature 54, returning 63,
+  v131 121, e2e 20 (real app).
+
 ## v1.3.0 — 2026-06-24
 - **Returning patients from the shared database.** A patient who was seen before
   can now be pulled up at Check-In by name instead of being re-registered:

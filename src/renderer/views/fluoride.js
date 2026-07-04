@@ -36,8 +36,6 @@ export function renderFluoride(container) {
       return;
     }
 
-    // DOC-3: fluoride is allowed — flag adult (permanent) tooth extractions as a non-blocking hint.
-    const adultExtraction = visit && window.api.codes.hasAdultExtraction(visit);
     // FLOW-5: patient came without a doctor visit (no dentist exam on this record).
     const noDentistExam = visit && visit.station_status && !visit.station_status.dentist;
 
@@ -66,7 +64,6 @@ export function renderFluoride(container) {
       patientSummary(patient),
       h('div', { class: 'panels-row' }, [medicalPanel(patient), treatmentDonePanel(visit, { open: true })]),
       visitHistoryPanel(patient),
-      adultExtraction ? h('div', { class: 'warn-banner', text: '⚠ ' + T.fluoride_adult_ext_hint }) : null,
       h('div', { class: 'card big-checks' }, [oh3, fl]),
       h('div', { class: 'view-foot' }, [
         h('button', { class: 'btn btn-ghost', onClick: screenLoad }, T.back),

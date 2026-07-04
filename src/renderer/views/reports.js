@@ -1,5 +1,5 @@
 /* Reports & export (spec 8). Admin (checkout) only. */
-import { h, mount, toast, alertDialog, spinner } from '../util.js';
+import { h, mount, toast, alertDialog, spinner, fmtDate } from '../util.js';
 import { T, LANG_NAMES } from '../i18n/index.js';
 import { clearPatientsButton } from '../components/cleardata.js';
 
@@ -48,8 +48,35 @@ export function renderReports(container, ctx) {
           h('th', { class: 'num-cell', text: T.count_col })
         ])),
         h('tbody', {}, rows)
-      ])
+      ]),
+      clinicSummaryGrid(stats.clinic_summary)
     );
+  }
+
+  // Clinic summary grid (paper stat sheet): one column per clinic day in the
+  // range + a Total column. Row labels use the staff UI language; exports use
+  // the report language (stamped on row.label by main/reports.js).
+  function clinicSummaryGrid(grid) {
+    if (!grid || !Array.isArray(grid.rows) || !grid.rows.length) return null;
+    const dayDates = grid.day_dates || [];
+    const numCell = (n) => h('td', { class: 'num-cell' + (n > 0 ? '' : ' cell-zero'), text: String(n) });
+    const bodyRows = grid.rows.map((r) => h('tr', { class: r.indent ? 'grid-indent' : 'grid-parent' }, [
+      h('td', { class: 'grid-label', text: T['grid_' + r.key] || r.label }),
+      ...(r.perDay || []).map(numCell),
+      h('td', { class: 'num-cell grid-total' + (r.total > 0 ? '' : ' cell-zero'), text: String(r.total) })
+    ]));
+    return h('div', { class: 'clinic-summary' }, [
+      h('h3', { class: 'card-title', text: T.grid_title }),
+      h('div', { class: 'clinic-summary-scroll' },
+        h('table', { class: 'report-table clinic-summary-grid' }, [
+          h('thead', {}, h('tr', {}, [
+            h('th', { text: '' }),
+            ...dayDates.map((d) => h('th', { class: 'num-cell', text: fmtDate(d) })),
+            h('th', { class: 'num-cell grid-total', text: T.grid_col_total })
+          ])),
+          h('tbody', {}, bodyRows)
+        ]))
+    ]);
   }
 
   async function exportSummary(format) {

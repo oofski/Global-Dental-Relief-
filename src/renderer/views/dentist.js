@@ -52,7 +52,7 @@ export function renderDentist(container, ctx) {
         .map((t) => window.api.codes.formatItem(t)).filter(Boolean).join(', ');
       if (notesEl) notesEl.value = visit.treatment_notes;
     }
-    const chart = toothChart(visit, { onChange: () => { refreshToday(); regenNotes(); refreshFlHint(); } });
+    const chart = toothChart(visit, { onChange: () => { refreshToday(); regenNotes(); } });
 
     // Exam type
     const examSeg = h('div', { class: 'seg' }, [
@@ -84,18 +84,6 @@ export function renderDentist(container, ctx) {
 
     // Fluoride recommended (#5) — clinician order; executed at the fluoride station.
     const flRec = checkbox(T.fluoride_recommended_label, visit.fluoride_recommended !== false, (v) => { visit.fluoride_recommended = v; });
-
-    // DOC-3: standing help text + a LIVE reminder (no automation) shown when the
-    // chart contains an adult (permanent) tooth extraction. The doctor decides;
-    // we never auto-toggle the checkbox.
-    const flAdultExtHint = h('div', { class: 'field-hint' });
-    function refreshFlHint() {
-      let adultExt = false;
-      try { adultExt = !!window.api.codes.hasAdultExtraction(visit); } catch (_) { adultExt = false; }
-      flAdultExtHint.classList.toggle('warn-hint', adultExt);
-      flAdultExtHint.textContent = adultExt ? T.fluoride_adult_ext_hint : '';
-    }
-    refreshFlHint();
 
     // OH2
     const oh2 = checkbox(T.oh2_label, visit.oh2_done, (v) => { visit.oh2_done = v; });
@@ -150,17 +138,12 @@ export function renderDentist(container, ctx) {
           h('div', { class: 'field-hint', text: T.nt_hint })
         ]),
         field(T.cleaning_order, cleanSeg),
-        h('div', { class: 'care-rec-row' }, [
-          flRec,
-          h('div', { class: 'field-hint', text: T.fluoride_adult_ext_hint }),
-          flAdultExtHint
-        ]),
+        h('div', { class: 'care-rec-row' }, [flRec]),
         field(T.treatment_notes, notes, { hint: T.treatment_notes_auto })
       ]),
 
       h('div', { class: 'card' }, [
         h('h3', { class: 'card-title', text: T.today_selection }),
-        h('div', { class: 'field-hint', text: T.today_rule }),
         todayList
       ]),
 
