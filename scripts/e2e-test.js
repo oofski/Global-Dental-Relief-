@@ -104,7 +104,8 @@ console.log('=== 1. npm run smoke / npm run flow (headless core) ===');
 
 // ---------------------------------------------------------------------------
 // CHECK 6 — brand (v1.1.4): runs on the login screen of any launch.
-// CHECK 5 — chart (v1.1.1): dentist chart layouts/health/panels.
+// CHECK 5 — chart: v1.3.2 removes the dentition-layout dropdown (hybrid-only,
+//           52 teeth); v1.1.1 health-status mode + context panels still stand.
 // (Combine into a single dentist launch over a fresh check-in patient.)
 // ---------------------------------------------------------------------------
 console.log('\n=== 5/6. v1.1.1 chart + v1.1.4 brand (DOCTOR launch) ===');
@@ -117,14 +118,14 @@ seed([], 'fresh check-in');
   record('6a', 'v1.1.4 body font includes "Source Sans 3"', /Source Sans 3/.test(fontLine), fontLine.replace('[smoke] ', '').trim());
   record('6b', 'v1.1.4 login lockup image naturalWidth > 0', num(lockupLine) > 0, lockupLine.replace('[smoke] ', '').trim());
   // header brand-logo presence is checked separately below (admin launch shows header)
-  // v1.1.1 chart
-  const layoutsLine = find(lines, /chart layouts/);
+  // v1.3.2 item 1 — the dentition-layout dropdown was REMOVED. The chart always
+  // renders the hybrid dentition (adult 1-32 + primary a-t = 52 teeth). 5c health.
+  const selectorLine = find(lines, /chart selector present/);
   const hybridLine = find(lines, /teeth \(hybrid\)/);
-  const adultLine = find(lines, /teeth \(adult only\)/);
   const tintedLine = find(lines, /health-tinted teeth/);
-  const has3 = /Hybrid/.test(layoutsLine) && /Adult/.test(layoutsLine) && /Primary/.test(layoutsLine);
-  record('5a', 'v1.1.1 chart dropdown shows 3 layouts (hybrid/adult/primary)', has3, layoutsLine.replace('[smoke] ', '').trim());
-  record('5b', 'v1.1.1 hybrid=52 teeth → adult=32 teeth', num(hybridLine) === 52 && num(adultLine) === 32, `${hybridLine.trim()} | ${adultLine.trim()}`);
+  const noSelector = /present:\s*false/.test(selectorLine);
+  record('5a', 'v1.3.2 no dentition-layout selector present (.chart-view-select removed)', noSelector, selectorLine.replace('[smoke] ', '').trim());
+  record('5b', 'v1.3.2 hybrid chart shows 52 teeth (adult 32 + primary 20)', num(hybridLine) === 52, hybridLine.replace('[smoke] ', '').trim());
   record('5c', 'v1.1.1 Health-status mode tints a tooth on click', num(tintedLine) >= 1, tintedLine.replace('[smoke] ', '').trim());
 }
 

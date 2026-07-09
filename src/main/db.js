@@ -182,7 +182,7 @@ function mergeVisit(a, b) {
   out.fluoride_recommended = (a.fluoride_recommended !== false) && (b.fluoride_recommended !== false);
 
   // Timestamps / outcome: keep whichever side actually has a value.
-  ['cleaning_done_at', 'fluoride_done_at', 'checkout_timestamp', 'visit_outcome', 'exam_type', 'clinician_type', 'clinician_initials']
+  ['cleaning_done_at', 'fluoride_done_at', 'checkout_timestamp', 'visit_outcome', 'exam_type', 'clinician_type', 'clinician_initials', 'rdh_initials', 'fluoride_initials']
     .forEach((k) => { if (!out[k]) out[k] = base[k] || other[k] || out[k]; });
   // cleaning_type (clinician order): never downgrade an actual order (P/D) to None,
   // because a later station often re-saves a copy carrying the default 'None'.
@@ -199,7 +199,13 @@ function mergeVisit(a, b) {
     const complete = !!(prev.complete || t.complete);
     // complete always wins over not_done; they are mutually exclusive after merge.
     const not_done = (!complete) && !!(prev.not_done || t.not_done);
-    const fields = { complete, not_done };
+    // Provider stamps are append-only across drive round-trips: planned_by is
+    // write-once (first non-null wins) and performed_by tracks the completing
+    // station (non-null wins). Without this, a null on the newer copy would
+    // clobber a real stamp via Object.assign below.
+    const planned_by = prev.planned_by || t.planned_by || null;
+    const performed_by = prev.performed_by || t.performed_by || null;
+    const fields = { complete, not_done, planned_by, performed_by };
     items[k] = ((b.last_modified || '') >= (a.last_modified || ''))
       ? Object.assign({}, prev, t, fields)
       : Object.assign({}, t, prev, fields);

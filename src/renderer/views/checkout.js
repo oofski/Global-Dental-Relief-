@@ -1,7 +1,7 @@
 /* Checkout / Master station (spec 5.5, 7.3). Admin role. */
 import { h, mount, toast, alertDialog, confirmDialog, fmtDate, fmtDateTime, timeSince, spinner, lastVisit } from '../util.js';
 import { T } from '../i18n/index.js';
-import { alertBanner, patientSummary, visitHistoryPanel, driveSelector, careChecklist, visitTreatmentSummary } from '../components/shared.js';
+import { alertBanner, patientSummary, visitHistoryPanel, driveSelector, careChecklist, visitTreatmentSummary, treatmentChipClass, providerLabel } from '../components/shared.js';
 import { renderReports } from './reports.js';
 import { renderSettings } from './settings.js';
 
@@ -91,7 +91,7 @@ export function renderCheckout(container, ctx) {
     }
 
     // Visit detail summary
-    const codes = visit ? (visit.treatment_items || []).map((t) => h('span', { class: 'code-chip' + (t.complete ? ' done' : ''), text: window.api.codes.formatItem(t) })) : [];
+    const codes = visit ? (visit.treatment_items || []).map((t) => h('span', { class: treatmentChipClass(t), text: window.api.codes.formatItem(t) })) : [];
 
     // Outstanding from prior NV visits
     const priorNV = (patient.visits || []).filter((v) => v !== visit && v.visit_outcome === 'NV');
@@ -110,19 +110,24 @@ export function renderCheckout(container, ctx) {
       const seg = h('div', { class: 'tx-outcome-seg' });
       const finBtn = h('button', { type: 'button', class: 'seg-btn' + (item.complete === true ? ' is-finished' : '') }, T.status_finished);
       const ndBtn = h('button', { type: 'button', class: 'seg-btn' + (item.complete !== true && item.not_done === true ? ' is-nd' : '') }, T.status_not_done);
+      const chip = h('span', { class: treatmentChipClass(item), text: window.api.codes.formatItem(item) });
+      function refreshChip() { chip.className = treatmentChipClass(item); }
       finBtn.addEventListener('click', () => {
         item.complete = true; item.not_done = false;
         finBtn.classList.add('is-finished'); ndBtn.classList.remove('is-nd');
-        refreshTally();
+        refreshChip(); refreshTally();
       });
       ndBtn.addEventListener('click', () => {
         item.not_done = true; item.complete = false;
         ndBtn.classList.add('is-nd'); finBtn.classList.remove('is-finished');
-        refreshTally();
+        refreshChip(); refreshTally();
       });
       seg.appendChild(finBtn); seg.appendChild(ndBtn);
+      const provText = providerLabel(item.performed_by || item.planned_by);
+      const provTag = provText ? h('span', { class: 'provider-tag', text: provText }) : null;
       return h('div', { class: 'tx-outcome-row' }, [
-        h('span', { class: 'code-chip' + (item.complete ? ' done' : ''), text: window.api.codes.formatItem(item) }),
+        chip,
+        provTag,
         seg
       ]);
     }

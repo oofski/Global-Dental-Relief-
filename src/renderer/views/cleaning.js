@@ -1,11 +1,11 @@
 /* Cleaning station (spec 5.3) — single-purpose, with full patient context (#1). */
-import { h, mount, checkbox, toast, alertDialog, fmtDateTime, spinner, lastVisit } from '../util.js';
+import { h, mount, checkbox, field, toast, alertDialog, fmtDateTime, spinner, lastVisit } from '../util.js';
 import { T } from '../i18n/index.js';
-import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, treatmentDonePanel, cleaningTypeControl } from '../components/shared.js';
+import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, treatmentDonePanel, treatmentStatusPanel, cleaningTypeControl } from '../components/shared.js';
 import { driveSelector } from '../components/shared.js';
 import { toothChart } from '../components/toothchart.js';
 
-export function renderCleaning(container) {
+export function renderCleaning(container, ctx) {
   function screenLoad() {
     const selector = driveSelector({ mode: 'read', mergeMaster: true, onLoaded: screenEditor });
     mount(container, h('div', { class: 'view' }, [
@@ -44,6 +44,18 @@ export function renderCleaning(container) {
         if (visit) { visit.fluoride_done = v; visit.fluoride_done_at = v ? window.api.model.nowISO() : null; }
       });
 
+      // Item 4: RDH initials (mirrors the doctor's clinician_initials input).
+      const rdhInitials = h('input', { class: 'text-input', maxlength: '4', placeholder: 'AB', value: (visit && visit.rdh_initials) || '' });
+      rdhInitials.addEventListener('input', () => { if (visit) visit.rdh_initials = rdhInitials.value.toUpperCase(); });
+
+      // Items 2/3: standardized completed / not-completed status box. Editable so
+      // the hygienist can mark sealant/SDF complete later (stamps performed_by).
+      // Re-mounted on chart changes so newly-charted items appear immediately.
+      const statusHost = h('div', { class: 'card' });
+      function refreshStatus() {
+        mount(statusHost, treatmentStatusPanel(visit, { editable: true, provider: 'cleaning' }));
+      }
+
       // Treatment notes — collapsible, editable, shared with the dentist screen.
       // Newly charted sealant/SDF codes are APPENDED (never regenerated) so the
       // doctor's existing notes are preserved.
@@ -75,7 +87,7 @@ export function renderCleaning(container) {
       const chartPanel = visit ? h('details', { class: 'panel', open: true }, [
         h('summary', { text: T.tooth_chart }),
         h('div', { class: 'panel-body' }, [
-          toothChart(visit, { allowedTreatments: ['sealant', 'sdf'], onChange: appendChartNotes })
+          toothChart(visit, { allowedTreatments: ['sealant', 'sdf'], provider: 'cleaning', onChange: () => { appendChartNotes(); refreshStatus(); } })
         ])
       ]) : null;
 
@@ -100,13 +112,18 @@ export function renderCleaning(container) {
         ]),
         // HYG-4: OH2 + fluoride, both editable.
         h('div', { class: 'card big-checks' }, [oh2, fl]),
+        // Item 4: RDH initials.
+        h('div', { class: 'card' }, [field(T.rdh_initials, rdhInitials)]),
         chartPanel,
         notesPanel,
+        // Items 2/3: standardized editable status box.
+        statusHost,
         h('div', { class: 'view-foot' }, [
           h('button', { class: 'btn btn-ghost', onClick: screenLoad }, T.back),
           h('button', { class: 'btn btn-primary', onClick: save }, '💾 ' + T.save_to_drive)
         ])
       ]));
+      refreshStatus();
     }
     render();
   }

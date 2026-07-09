@@ -146,22 +146,22 @@ function createWindow() {
               if (boxes < 5) hadError = true;
             }
 
-            // Dentist chart: load sim drive, check layout dropdown + health mode.
+            // Dentist chart (v1.3.2 item 1): the dentition-layout dropdown is GONE.
+            // The chart always renders the hybrid dentition (adult 1-32 + primary
+            // a-t = 52 teeth). Assert NO .chart-view-select is present, hybrid=52
+            // teeth, and the health-status mode still tints a tooth on click.
             if (process.env.GDR_SMOKE_DENTIST) {
               const wait = (ms) => new Promise((r) => setTimeout(r, ms));
               await mainWindow.webContents.executeJavaScript("var c=document.querySelector('.drive-chip.sim'); if(c) c.click();"); await wait(800);
-              const views = await mainWindow.webContents.executeJavaScript("[...document.querySelectorAll('.chart-view-select option')].map(o=>o.textContent)");
+              const selectorPresent = await mainWindow.webContents.executeJavaScript("!!document.querySelector('.chart-view-select')");
               const teeth = await mainWindow.webContents.executeJavaScript("document.querySelectorAll('.tooth').length");
-              console.log('[smoke] chart layouts:', JSON.stringify(views));
+              console.log('[smoke] chart selector present:', selectorPresent);
               console.log('[smoke] teeth (hybrid):', teeth);
-              await mainWindow.webContents.executeJavaScript("var s=document.querySelector('.chart-view-select'); s.value='adult'; s.dispatchEvent(new Event('change',{bubbles:true}));"); await wait(300);
-              const adultTeeth = await mainWindow.webContents.executeJavaScript("document.querySelectorAll('.tooth').length");
-              console.log('[smoke] teeth (adult only):', adultTeeth);
               await mainWindow.webContents.executeJavaScript("var b=[...document.querySelectorAll('.chart-toolbar .seg-btn')].find(x=>/Health|salud/i.test(x.textContent)); if(b) b.click();"); await wait(200);
               await mainWindow.webContents.executeJavaScript("var t=document.querySelector('.tooth'); if(t){t.click();t.click();}"); await wait(200);
               const tinted = await mainWindow.webContents.executeJavaScript("document.querySelectorAll('.tooth.cond-healthy,.tooth.cond-watch,.tooth.cond-urgent').length");
               console.log('[smoke] health-tinted teeth after 2 clicks:', tinted);
-              if (!teeth || !views.length) hadError = true;
+              if (teeth !== 52 || selectorPresent) hadError = true;
             }
 
             // ====================================================================

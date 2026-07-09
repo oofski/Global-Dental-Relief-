@@ -421,6 +421,17 @@ export const es = {
   clear_mismatch: 'El texto de confirmación no coincide — no se borró nada.',
   clear_nothing: 'No hay registros de pacientes para borrar.',
 
+  // Estampado de proveedor + caja de estado + iniciales (v1.3.2 "Becky Bay")
+  tx_status_title: 'Estado del tratamiento',
+  rdh_initials: 'Iniciales del higienista',
+  fluoride_initials: 'Iniciales de flúor',
+  provider_dentist: 'Doctor',
+  provider_cleaning: 'Higienista',
+  provider_fluoride: 'Flúor',
+  planned_by: 'Planeado por',
+  performed_by: 'Realizado por',
+  confirm_name_hint: 'Confirme que el nombre del paciente coincide con este dispositivo.',
+
   // Misc
   station_locked: 'Esta estación no tiene acceso a esta función.',
   confirm_logout: '¿Cerrar sesión de esta estación?',

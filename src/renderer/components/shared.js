@@ -111,6 +111,24 @@ export function visitHistoryPanel(patient) {
   return details;
 }
 
+// ---- Chip color: the SINGLE source of truth for treatment code chips ----
+// Priority: done (green, struck through) > not-done (muted red, struck) >
+// planned (blue). Every station and panel routes its chip class through here so
+// colors never drift (v1.3.2). '.nd' is the canonical not-done class.
+export function treatmentChipClass(item) {
+  return 'code-chip' + (item && item.complete ? ' done' : (item && item.not_done ? ' nd' : ''));
+}
+
+// ---- Provider label: map a stamped role to its display name ----
+// Roles are 'dentist' | 'cleaning' | 'fluoride'; anything else (null/unknown)
+// returns '' so callers can omit the tag entirely.
+export function providerLabel(role) {
+  if (role === 'dentist') return T.provider_dentist;
+  if (role === 'cleaning') return T.provider_cleaning;
+  if (role === 'fluoride') return T.provider_fluoride;
+  return '';
+}
+
 // ---- "Treatment this visit" panel (what the doctor charted) ----
 export function treatmentDonePanel(visit, { open = false } = {}) {
   const details = h('details', { class: 'panel' });
@@ -124,7 +142,7 @@ export function treatmentDonePanel(visit, { open = false } = {}) {
     body.appendChild(h('div', { class: 'muted', text: `${T.exam_type}: ${visit.exam_type || '—'} · ${visit.clinician_type || ''} ${visit.clinician_initials || ''}`.trim() }));
     if (items.length) {
       body.appendChild(h('div', { class: 'pending-list' }, items.map((t) =>
-        h('span', { class: 'code-chip' + (t.complete ? ' done' : ''), text: C.formatItem(t) }))));
+        h('span', { class: treatmentChipClass(t), text: C.formatItem(t) }))));
     } else {
       body.appendChild(h('div', { class: 'muted', text: visit.nt_status ? 'NT' : '—' }));
     }
@@ -154,6 +172,78 @@ export function visitTreatmentSummary(visit) {
     h('span', { class: 'tx-sum-n', text: `${done}/${items.length}` })
   ]));
   return h('div', { class: 'tx-summary' }, rows);
+}
+
+// ---- Standardized completed / not-completed treatment status box (v1.3.2) ----
+// IDENTICAL markup across dentist, hygienist (cleaning) and fluoride so the
+// summary reads the same provider-to-provider. One row per treatment item:
+// a color-coded code chip + a small provider tag (who planned/performed it),
+// and — when editable — a Finished / Not done toggle.
+//   editable:true  → the toggle mutates the item and stamps performed_by=provider
+//                    on Finished (only if provider set and not already stamped).
+//   editable:false → read-only (fluoride): chips + tags only, never mutates.
+// The panel updates its own rows/header in place on every toggle — callers do
+// not need to rebuild it.
+export function treatmentStatusPanel(visit, { editable = false, provider = null, open = true, title } = {}) {
+  const items = (visit && visit.treatment_items) || [];
+  const total = items.length;
+  const countDone = () => items.filter((t) => t.complete).length;
+  const titleText = () => `${title || T.tx_status_title} (${countDone()}/${total})`;
+
+  const details = h('details', { class: 'panel' });
+  if (open) details.setAttribute('open', '');
+  const summaryEl = h('summary', { text: titleText() });
+  details.appendChild(summaryEl);
+
+  const body = h('div', { class: 'panel-body' });
+  const panel = h('div', { class: 'tx-status-panel' });
+
+  if (!items.length) {
+    panel.appendChild(h('div', { class: 'muted', text: visit && visit.nt_status ? 'NT' : '—' }));
+  } else {
+    items.forEach((item) => {
+      const row = h('div', { class: 'tx-status-row' });
+      const chip = h('span', { class: treatmentChipClass(item), text: C.formatItem(item) });
+      row.appendChild(chip);
+
+      const tag = h('span', { class: 'provider-tag' });
+      const initLabel = providerLabel(item.performed_by || item.planned_by);
+      if (initLabel) { tag.textContent = initLabel; row.appendChild(tag); }
+
+      if (editable) {
+        const finBtn = h('button', { type: 'button', class: 'seg-btn' + (item.complete ? ' is-finished' : '') }, T.status_finished);
+        const ndBtn = h('button', { type: 'button', class: 'seg-btn' + (item.not_done ? ' is-nd' : '') }, T.status_not_done);
+        const seg = h('div', { class: 'tx-status-seg' }, [finBtn, ndBtn]);
+
+        const sync = () => {
+          chip.className = treatmentChipClass(item);
+          finBtn.classList.toggle('is-finished', !!item.complete);
+          ndBtn.classList.toggle('is-nd', !!item.not_done);
+          const lbl = providerLabel(item.performed_by || item.planned_by);
+          if (lbl) { tag.textContent = lbl; if (!tag.parentNode) row.insertBefore(tag, seg); }
+          else if (tag.parentNode) row.removeChild(tag);
+          summaryEl.textContent = titleText();
+        };
+
+        finBtn.addEventListener('click', () => {
+          item.complete = true; item.not_done = false;
+          if (provider && !item.performed_by) item.performed_by = provider;
+          sync();
+        });
+        ndBtn.addEventListener('click', () => {
+          item.not_done = true; item.complete = false; item.performed_by = null;
+          sync();
+        });
+        row.appendChild(seg);
+      }
+
+      panel.appendChild(row);
+    });
+  }
+
+  body.appendChild(panel);
+  details.appendChild(body);
+  return details;
 }
 
 // ---- Care checklist: recommended vs completed (cleaning / fluoride / OH) ----
@@ -325,7 +415,9 @@ export function driveSelector({ mode = 'read', onLoaded, onSelected, mergeMaster
         ])
       ]),
       list,
-      mode === 'read' ? h('div', { class: 'drive-hint', text: T.insert_drive } ) : null
+      mode === 'read' ? h('div', { class: 'drive-hint', text: T.insert_drive } ) : null,
+      // Non-blocking identity reminder (item 8) — no modal, no gate.
+      mode === 'read' ? h('div', { class: 'drive-hint drive-hint-confirm', text: T.confirm_name_hint }) : null
     );
   }
 

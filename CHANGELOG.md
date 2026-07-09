@@ -4,6 +4,29 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.3.2 — 2026-07-09
+Changes from Becky Bay's call.
+- **Tooth chart simplified to the hybrid/mixed view only.** Removed the adult /
+  kid dentition dropdown — one less thing to pick; the chart always shows the
+  full mixed dentition (permanent 1–32 + primary a–t).
+- **Completed / not-completed treatment box on the hygienist screen**, so a
+  hygienist who plans a sealant/SDF can mark it done later even in a different
+  session.
+- **Standardized that completed/not-completed box across the dentist, hygienist,
+  and fluoride screens** — same layout and heading, so it looks the same
+  provider-to-provider.
+- **Initials fields added** for the hygienist and the fluoride station (the
+  dentist already had one).
+- **Fixed the checkout color bug:** flipping a treatment (e.g. "13 SEL") to
+  "not done" now immediately recolors the chip to a distinct red state and it is
+  no longer struck-through/shown as done.
+- **Automatic provider tags:** each treatment is now labeled with who planned and
+  who performed it (Doctor vs Hygienist), based on the logged-in account.
+- Added a lightweight, non-blocking reminder at each station to confirm the
+  patient's name matches the drive (per the team's note — a prompt, not a gate).
+- Quality: new `npm run v132` suite (40 assertions). Full regression green: smoke
+  16, flow 198, feature 54, returning 63, v131 121, v132 40, e2e 20 (real app).
+
 ## v1.3.1 — 2026-07-01
 Changes from the clinic's week-summary review call.
 - **Dates are spelled out** (e.g. "July 1, 2026" / "1 de julio de 2026") everywhere

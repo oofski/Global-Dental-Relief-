@@ -1,7 +1,7 @@
 /* Dentist station (spec 5.2). */
 import { h, mount, field, checkbox, toast, alertDialog, spinner, lastVisit } from '../util.js';
 import { T } from '../i18n/index.js';
-import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, driveSelector, cleaningTypeControl } from '../components/shared.js';
+import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, driveSelector, cleaningTypeControl, treatmentStatusPanel } from '../components/shared.js';
 import { toothChart } from '../components/toothchart.js';
 
 export function renderDentist(container, ctx) {
@@ -26,23 +26,13 @@ export function renderDentist(container, ctx) {
     }
     if (!visit.treatment_items) visit.treatment_items = [];
 
-    const todayList = h('div', { class: 'today-list' });
-
-    function refreshToday() {
-      const items = visit.treatment_items || [];
-      if (!items.length) { mount(todayList, h('div', { class: 'muted', text: T.no_treatment_items })); return; }
-      mount(todayList, ...items.map((t) => {
-        const code = window.api.codes.formatItem(t);
-        const todayChk = h('input', { type: 'checkbox', checked: !!t.treating_today });
-        todayChk.addEventListener('change', () => { t.treating_today = todayChk.checked; });
-        const doneChk = h('input', { type: 'checkbox', checked: !!t.complete });
-        doneChk.addEventListener('change', () => { t.complete = doneChk.checked; refreshToday(); });
-        return h('div', { class: 'today-item' + (t.complete ? ' done' : '') + (t.treating_today ? ' today' : '') }, [
-          h('span', { class: 'code-chip', text: code }),
-          h('label', { class: 'checkbox checkbox-inline' }, [todayChk, h('span', { text: T.treating_today })]),
-          h('label', { class: 'checkbox checkbox-inline' }, [doneChk, h('span', { text: T.mark_complete })])
-        ]);
-      }));
+    // Standardized completed / not-completed status box (v1.3.2) — identical
+    // component across dentist / hygienist / fluoride. The panel updates itself
+    // in place on toggle; we re-mount it only when the chart adds/removes items.
+    // mark_complete now lives in the panel toggle (stamps performed_by='dentist').
+    const statusHost = h('div', { class: 'status-host' });
+    function refreshStatus() {
+      mount(statusHost, treatmentStatusPanel(visit, { editable: true, provider: 'dentist' }));
     }
 
     // Auto-fill treatment notes from the tooth chart (#2) — still editable.
@@ -52,7 +42,7 @@ export function renderDentist(container, ctx) {
         .map((t) => window.api.codes.formatItem(t)).filter(Boolean).join(', ');
       if (notesEl) notesEl.value = visit.treatment_notes;
     }
-    const chart = toothChart(visit, { onChange: () => { refreshToday(); regenNotes(); } });
+    const chart = toothChart(visit, { provider: 'dentist', onChange: () => { refreshStatus(); regenNotes(); } });
 
     // Exam type
     const examSeg = h('div', { class: 'seg' }, [
@@ -142,10 +132,7 @@ export function renderDentist(container, ctx) {
         field(T.treatment_notes, notes, { hint: T.treatment_notes_auto })
       ]),
 
-      h('div', { class: 'card' }, [
-        h('h3', { class: 'card-title', text: T.today_selection }),
-        todayList
-      ]),
+      h('div', { class: 'card' }, [statusHost]),
 
       h('div', { class: 'card' }, [oh2]),
 
@@ -154,7 +141,7 @@ export function renderDentist(container, ctx) {
         h('button', { class: 'btn btn-primary btn-lg', onClick: save }, '💾 ' + T.save_to_drive)
       ])
     ]));
-    refreshToday();
+    refreshStatus();
   }
 
   function toggle(seg, e) { [...seg.children].forEach((c) => c.classList.remove('active')); e.currentTarget.classList.add('active'); }

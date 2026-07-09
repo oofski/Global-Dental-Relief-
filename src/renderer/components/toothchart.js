@@ -1,6 +1,6 @@
 /*
  * Tooth chart (spec 5.2 Screen C, 6.1–6.3) + v1.1.1 enhancements:
- *   - Layout dropdown: hybrid (adult + primary), full adult (1–32), full primary (a–t).
+ *   - Fixed hybrid layout: adult (1–32) + primary (a–t); no layout selector (v1.3.2).
  *   - Two modes: "Treatment" (click a tooth -> code editor) and "Health status"
  *     (click a tooth to cycle yellow=watch / red=needs-care).
  *     Legacy records with a stored 'healthy' (green) value still render, but
@@ -54,7 +54,15 @@ function toothButton(ctx, tooth, system) {
       const res = await editTooth(visit, tooth, system, ctx.allowedTreatments);
       if (res.action === 'save') {
         const ex = findItem(visit, tooth);
-        if (ex) Object.assign(ex, res.item); else visit.treatment_items.push(res.item);
+        if (ex) {
+          Object.assign(ex, res.item);
+        } else {
+          // Stamp who charted this item (write-once) and, if it was saved
+          // already complete, who performed it — new items only.
+          if (ctx.provider && res.item.planned_by == null) res.item.planned_by = ctx.provider;
+          if (res.item.complete === true && ctx.provider && res.item.performed_by == null) res.item.performed_by = ctx.provider;
+          visit.treatment_items.push(res.item);
+        }
       } else if (res.action === 'remove') {
         visit.treatment_items = visit.treatment_items.filter((t) => String(t.tooth) !== String(tooth));
       } else { return; }
@@ -71,14 +79,15 @@ function row(ctx, teeth, system) {
   return h('div', { class: 'tooth-row' }, teeth.map((t) => toothButton(ctx, t, system)));
 }
 
-export function toothChart(visit, { readOnly = false, onChange, allowedTreatments } = {}) {
+export function toothChart(visit, { readOnly = false, onChange, allowedTreatments, provider } = {}) {
   if (!visit.treatment_items) visit.treatment_items = [];
   if (!visit.tooth_conditions) visit.tooth_conditions = {};
-  if (!visit.chart_view) visit.chart_view = 'hybrid';
+  // v1.3.2: single fixed hybrid layout — legacy 'adult'/'primary' now render hybrid.
+  visit.chart_view = 'hybrid';
   let mode = 'treatment';
 
   const host = h('div', { class: 'tooth-chart-wrap' });
-  const ctx = { visit, readOnly, mode: () => mode, rerender, onChange, allowedTreatments };
+  const ctx = { visit, readOnly, mode: () => mode, rerender, onChange, allowedTreatments, provider };
 
   function archRows() {
     const v = visit.chart_view;
@@ -102,22 +111,16 @@ export function toothChart(visit, { readOnly = false, onChange, allowedTreatment
   }
 
   function toolbar() {
-    const sel = h('select', { class: 'text-input chart-view-select' }, [
-      h('option', { value: 'hybrid', text: T.view_hybrid }),
-      h('option', { value: 'adult', text: T.view_adult }),
-      h('option', { value: 'primary', text: T.view_primary })
-    ]);
-    sel.value = visit.chart_view;
-    sel.addEventListener('change', () => { visit.chart_view = sel.value; rerender(); });
-
+    // v1.3.2: layout selector removed — hybrid is the only view. Only the
+    // Treatment / Health-status mode toggle remains (editable charts).
+    if (readOnly) return null;
     const modeSeg = h('div', { class: 'seg' }, [
       h('button', { class: 'seg-btn' + (mode === 'treatment' ? ' active' : ''), type: 'button', onClick: () => { mode = 'treatment'; rerender(); } }, T.chart_mode_treatment),
       h('button', { class: 'seg-btn' + (mode === 'health' ? ' active' : ''), type: 'button', onClick: () => { mode = 'health'; rerender(); } }, T.chart_mode_health)
     ]);
 
     return h('div', { class: 'chart-toolbar' }, [
-      h('div', { class: 'chart-toolbar-grp' }, [h('label', { class: 'field-label', text: T.chart_view_label }), sel]),
-      readOnly ? null : h('div', { class: 'chart-toolbar-grp' }, [modeSeg])
+      h('div', { class: 'chart-toolbar-grp' }, [modeSeg])
     ]);
   }
 
@@ -239,7 +242,11 @@ function editTooth(visit, tooth, system, allowedTreatments) {
       if (val === '__save__') {
         resolve({
           action: 'save',
+          // Spread the source item first so model-only fields (not_done,
+          // planned_by, performed_by) carry through; the edited fields below
+          // override. For new items `item` is a fresh newTreatmentItem().
           item: {
+            ...item,
             id: item.id,
             tooth,
             treatment_type: state.treatment_type,

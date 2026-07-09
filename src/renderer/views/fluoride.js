@@ -1,9 +1,9 @@
 /* Fluoride station (spec 5.4) — OH3 + fluoride, with full patient context (#1). */
-import { h, mount, checkbox, alertDialog, spinner, lastVisit } from '../util.js';
+import { h, mount, checkbox, field, alertDialog, spinner, lastVisit } from '../util.js';
 import { T } from '../i18n/index.js';
-import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, treatmentDonePanel, driveSelector } from '../components/shared.js';
+import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, treatmentDonePanel, treatmentStatusPanel, driveSelector } from '../components/shared.js';
 
-export function renderFluoride(container) {
+export function renderFluoride(container, ctx) {
   function screenLoad() {
     const selector = driveSelector({ mode: 'read', mergeMaster: true, onLoaded: screenEditor });
     mount(container, h('div', { class: 'view' }, [
@@ -44,6 +44,10 @@ export function renderFluoride(container) {
       if (visit) { visit.fluoride_done = v; visit.fluoride_done_at = v ? window.api.model.nowISO() : null; }
     });
 
+    // Item 5: fluoride-station initials (mirrors the doctor's clinician_initials).
+    const flInitials = h('input', { class: 'text-input', maxlength: '4', placeholder: 'AB', value: (visit && visit.fluoride_initials) || '' });
+    flInitials.addEventListener('input', () => { if (visit) visit.fluoride_initials = flInitials.value.toUpperCase(); });
+
     async function save() {
       if (visit) { visit.station_status.fluoride = true; visit.last_modified = window.api.model.nowISO(); }
       mount(container, h('div', { class: 'view' }, [spinner(T.loading)]));
@@ -65,6 +69,11 @@ export function renderFluoride(container) {
       h('div', { class: 'panels-row' }, [medicalPanel(patient), treatmentDonePanel(visit, { open: true })]),
       visitHistoryPanel(patient),
       h('div', { class: 'card big-checks' }, [oh3, fl]),
+      // Item 5: fluoride-station initials.
+      h('div', { class: 'card' }, [field(T.fluoride_initials, flInitials)]),
+      // Item 3: standardized status box — READ-ONLY here (fluoride neither plans
+      // nor performs treatment; shows chips + provider tags only, never stamps).
+      h('div', { class: 'card' }, [treatmentStatusPanel(visit, { editable: false })]),
       h('div', { class: 'view-foot' }, [
         h('button', { class: 'btn btn-ghost', onClick: screenLoad }, T.back),
         h('button', { class: 'btn btn-primary', onClick: save }, '💾 ' + T.save_to_drive)

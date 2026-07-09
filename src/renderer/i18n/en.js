@@ -422,6 +422,17 @@ export const en = {
   clear_mismatch: 'Confirmation text did not match — nothing was deleted.',
   clear_nothing: 'There are no patient records to clear.',
 
+  // Provider stamping + status box + initials (v1.3.2 "Becky Bay")
+  tx_status_title: 'Treatment status',
+  rdh_initials: 'Hygienist initials',
+  fluoride_initials: 'Fluoride initials',
+  provider_dentist: 'Doctor',
+  provider_cleaning: 'Hygienist',
+  provider_fluoride: 'Fluoride',
+  planned_by: 'Planned by',
+  performed_by: 'Performed by',
+  confirm_name_hint: 'Confirm the patient’s name matches this drive.',
+
   // Misc
   station_locked: 'This station does not have access to this function.',
   confirm_logout: 'Log out of this station?',

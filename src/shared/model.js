@@ -89,6 +89,8 @@ function newVisit(patient) {
     exam_type: null,            // 'E' | 'R'
     clinician_type: null,       // 'DDS' | 'RDH'
     clinician_initials: '',
+    rdh_initials: '',           // hygienist (cleaning station) initials
+    fluoride_initials: '',      // fluoride station initials
     nt_status: false,
     treatment_items: [],        // [{ tooth, surfaces[], treatment_type, surgical, treating_today, complete }]
     tooth_conditions: {},       // { '<tooth>': 'healthy' | 'watch' | 'urgent' } quick screening
@@ -128,7 +130,9 @@ function newTreatmentItem(tooth) {
     surgical: false,
     treating_today: true,
     complete: false,
-    not_done: false
+    not_done: false,
+    planned_by: null,           // role that charted this item ('dentist'|'cleaning'|'fluoride') — write-once
+    performed_by: null          // role that completed it — set when complete goes true
   };
 }
 
