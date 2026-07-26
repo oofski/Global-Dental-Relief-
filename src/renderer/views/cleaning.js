@@ -1,7 +1,7 @@
 /* Cleaning station (spec 5.3) — single-purpose, with full patient context (#1). */
 import { h, mount, checkbox, field, toast, alertDialog, fmtDateTime, spinner, lastVisit } from '../util.js';
 import { T } from '../i18n/index.js';
-import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, treatmentDonePanel, treatmentStatusPanel, cleaningTypeControl } from '../components/shared.js';
+import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, treatmentDonePanel, treatmentStatusPanel, cleaningTypeControl, consentLimitsAlert, consentLimitsBanner } from '../components/shared.js';
 import { driveSelector } from '../components/shared.js';
 import { toothChart } from '../components/toothchart.js';
 
@@ -15,6 +15,9 @@ export function renderCleaning(container, ctx) {
   }
 
   function screenEditor(patient, drivePath) {
+    // Care the parent refused must be acknowledged before charting starts.
+    consentLimitsAlert(patient);
+
     const visit = lastVisit(patient);
 
     async function markDone() {
@@ -97,6 +100,7 @@ export function renderCleaning(container, ctx) {
           h('button', { class: 'btn btn-ghost btn-sm', onClick: screenLoad }, '← ' + T.load_from_drive)
         ]),
         alertBanner(patient),
+        consentLimitsBanner(patient),
         noDentistExam ? h('div', { class: 'no-exam-banner', text: T.no_dentist_exam }) : null,
         patientSummary(patient),
         h('div', { class: 'panels-row' }, [medicalPanel(patient), treatmentDonePanel(visit, { open: true })]),

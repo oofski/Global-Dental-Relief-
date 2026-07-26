@@ -103,6 +103,87 @@ console.log('=== 1. npm run smoke / npm run flow (headless core) ===');
 }
 
 // ---------------------------------------------------------------------------
+// CHECK 8 — v1.3.3 permission slip: the check-in screen renders the clinic's
+//           real paper form (three opt-in boxes, autopopulated child/Escuela,
+//           phone, both signing options) and the old draft text is gone.
+// ---------------------------------------------------------------------------
+console.log('\n=== 8. v1.3.3 permission slip (CHECK-IN launch) ===');
+seed([], 'fresh check-in');
+{
+  const { lines } = launch({ GDR_SMOKE_LOGIN: 'frontdesk:welcome123', GDR_SMOKE_CONSENT_SLIP: '1' }, 'consent slip');
+  const slipLine = find(lines, /consent slip:/);
+  let s = {};
+  try { s = JSON.parse(slipLine.replace(/^.*consent slip:\s*/, '')); } catch (_) { s = {}; }
+  record('8a', 'v1.3.3 slip shows exactly 3 opt-in care boxes (Cleaning/Fillings/Extractions)',
+    s.perms === 3, `perms=${s.perms} labels=${JSON.stringify(s.labels || [])}`);
+  record('8b', 'v1.3.3 every care box starts UNTICKED (parent must opt in)',
+    s.allUnticked === true, `allUnticked=${s.allUnticked}`);
+  record('8c', "v1.3.3 child's name + Escuela autopopulate from registration",
+    /Juan/.test(s.childAuto || '') && /Morelos/.test(s.schoolAuto || ''),
+    `child="${s.childAuto}" escuela="${s.schoolAuto}"`);
+  record('8d', 'v1.3.3 signature pad AND typed-name blank both present, plus phone field',
+    s.pad === true && s.inlineName === true && s.phone === true,
+    `pad=${s.pad} typedBlank=${s.inlineName} phone=${s.phone}`);
+  record('8e', 'v1.3.3 old DRAFT consent text is gone from the running app',
+    s.draftGone === true, `draftGone=${s.draftGone}`);
+}
+
+// ---------------------------------------------------------------------------
+// CHECK 9 — v1.3.3 consent restrictions: a declined care option raises a RED
+//           popup the clinician must acknowledge (backdrop click will NOT
+//           dismiss it), leaves a standing banner, never blocks charting — and
+//           stays SILENT for legacy records.
+// ---------------------------------------------------------------------------
+console.log('\n=== 9. v1.3.3 consent restrictions (DOCTOR + HYGIENIST launches) ===');
+{
+  const parse = (lines, re) => { try { return JSON.parse(find(lines, re).replace(/^.*?:\s*(?=\{)/, '')); } catch (_) { return {}; } };
+
+  // 9a-9d: parent ticked ONLY cleaning -> fillings + extractions denied.
+  seed([], 'consent partial');
+  const partial = launch({ GDR_SMOKE_LOGIN: 'doctor:welcome123', GDR_SMOKE_CONSENT_LIMITS: 'partial' }, 'consent partial').lines;
+  const pBefore = parse(partial, /consent limits before:/);
+  const pAfter = parse(partial, /consent limits after:/);
+  const pSurvived = /survived:\s*true/.test(find(partial, /backdrop-survived/));
+  record('9a', 'v1.3.3 declined care raises the RED consent popup at the dentist',
+    pBefore.modal === true, `modal=${pBefore.modal} denied=${JSON.stringify(pBefore.chips || [])}`);
+  record('9b', 'v1.3.3 popup names exactly the declined care and offers X + acknowledge',
+    (pBefore.chips || []).length === 2 && pBefore.hasX === true && pBefore.ack === true,
+    `chips=${JSON.stringify(pBefore.chips || [])} X=${pBefore.hasX} ack=${pBefore.ack}`);
+  record('9c', 'v1.3.3 a backdrop click does NOT dismiss it (must be deliberate)',
+    pSurvived === true, `survivedBackdropClick=${pSurvived}`);
+  record('9d', 'v1.3.3 after acknowledging, the red banner stands and charting still works',
+    pAfter.modal === false && pAfter.banner === true && pAfter.chartable === true,
+    `modalGone=${pAfter.modal === false} banner=${pAfter.banner} chartable=${pAfter.chartable}`);
+
+  // 9e: LEGACY record (pre-slip consent, no per-item boxes) must stay silent.
+  seed([], 'consent legacy');
+  const legacy = launch({ GDR_SMOKE_LOGIN: 'doctor:welcome123', GDR_SMOKE_CONSENT_LIMITS: 'legacy' }, 'consent legacy').lines;
+  const lBefore = parse(legacy, /consent limits before:/);
+  const lAfter = parse(legacy, /consent limits after:/);
+  record('9e', 'v1.3.3 LEGACY consent stays silent (no false alarm on returning patients)',
+    lBefore.modal === false && lAfter.banner === false,
+    `modal=${lBefore.modal} banner=${lAfter.banner}`);
+
+  // 9f: parent ticked everything -> no warning at all.
+  seed([], 'consent all granted');
+  const all = launch({ GDR_SMOKE_LOGIN: 'doctor:welcome123', GDR_SMOKE_CONSENT_LIMITS: 'all' }, 'consent all').lines;
+  const aBefore = parse(all, /consent limits before:/);
+  const aAfter = parse(all, /consent limits after:/);
+  record('9f', 'v1.3.3 fully-granted slip raises no popup and no banner',
+    aBefore.modal === false && aAfter.banner === false,
+    `modal=${aBefore.modal} banner=${aAfter.banner}`);
+
+  // 9g: the SAME warning must appear at the hygienist station.
+  seed([], 'consent none (hygienist)');
+  const hyg = launch({ GDR_SMOKE_LOGIN: 'hygienist:welcome123', GDR_SMOKE_CONSENT_LIMITS: 'none' }, 'consent hygienist').lines;
+  const hBefore = parse(hyg, /consent limits before:/);
+  const hAfter = parse(hyg, /consent limits after:/);
+  record('9g', 'v1.3.3 the hygienist station raises the identical warning (all 3 declined)',
+    hBefore.modal === true && (hBefore.chips || []).length === 3 && hAfter.banner === true,
+    `modal=${hBefore.modal} chips=${JSON.stringify(hBefore.chips || [])} banner=${hAfter.banner}`);
+}
+
+// ---------------------------------------------------------------------------
 // CHECK 6 — brand (v1.1.4): runs on the login screen of any launch.
 // CHECK 5 — chart: v1.3.2 removes the dentition-layout dropdown (hybrid-only,
 //           52 teeth); v1.1.1 health-status mode + context panels still stand.

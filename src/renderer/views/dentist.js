@@ -1,7 +1,7 @@
 /* Dentist station (spec 5.2). */
 import { h, mount, field, checkbox, toast, alertDialog, spinner, lastVisit } from '../util.js';
 import { T } from '../i18n/index.js';
-import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, driveSelector, cleaningTypeControl, treatmentStatusPanel } from '../components/shared.js';
+import { alertBanner, patientSummary, medicalPanel, visitHistoryPanel, driveSelector, cleaningTypeControl, treatmentStatusPanel, consentLimitsAlert, consentLimitsBanner } from '../components/shared.js';
 import { toothChart } from '../components/toothchart.js';
 
 export function renderDentist(container, ctx) {
@@ -18,6 +18,9 @@ export function renderDentist(container, ctx) {
   }
 
   function screenEditor(patient, drivePath) {
+    // Care the parent refused must be acknowledged before charting starts.
+    consentLimitsAlert(patient);
+
     // Work on the latest visit (created at check-in). Create one if missing.
     let visit = lastVisit(patient);
     if (!visit || visit.station_status.checkout) {
@@ -104,6 +107,7 @@ export function renderDentist(container, ctx) {
         h('button', { class: 'btn btn-ghost btn-sm', onClick: screenLoad }, '← ' + T.load_from_drive)
       ]),
       alertBanner(patient),
+      consentLimitsBanner(patient),
       patientSummary(patient),
       h('div', { class: 'panels-row' }, [medicalPanel(patient), visitHistoryPanel(patient)]),
 

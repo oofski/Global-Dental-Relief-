@@ -106,6 +106,9 @@ contextBridge.exposeInMainWorld('api', {
     newTreatmentItem: (tooth) => model.newTreatmentItem(tooth),
     newMedicalHistory: () => model.newMedicalHistory(),
     activeAlerts: (med) => model.activeAlerts(med),
+    newConsent: () => model.newConsent(),
+    PERMISSION_KEYS: model.PERMISSION_KEYS,
+    consentPermissions: (p) => model.consentPermissions(p),
     fullName: (p) => model.fullName(p)
     // NOTE: lastVisit() is intentionally NOT exposed here. Crossing the
     // contextBridge structured-clones the patient, so a returned visit would be

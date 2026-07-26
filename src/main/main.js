@@ -164,6 +164,107 @@ function createWindow() {
               if (teeth !== 52 || selectorPresent) hadError = true;
             }
 
+            // Permission slip (v1.3.3): the check-in consent screen must render
+            // the clinic's real paper form — three opt-in care boxes that all
+            // start UNTICKED, the child's name + Escuela autopopulated from the
+            // registration screen, a phone field, and BOTH signing options (pad
+            // + typed name). Also asserts the old draft text is gone.
+            if (process.env.GDR_SMOKE_CONSENT_SLIP) {
+              const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+              const js = (s) => mainWindow.webContents.executeJavaScript(s);
+              // Start -> New patient (screenRegister is async: it awaits the
+              // next patient number before rendering) -> registration -> slip.
+              await js("(function(){var b=document.querySelector('.choice-btn.choice-new'); if(b) b.click(); return !!b;})()");
+              await wait(900);
+              const filled = await js(`(function(){
+                var v=[...document.querySelectorAll('.text-input')];   // first, last, school, age
+                if(v[0]) v[0].value='Juan';
+                if(v[1]) v[1].value='Garcia';
+                if(v[2]) v[2].value='Escuela Morelos';
+                if(v[3]) v[3].value='9';
+                v.forEach(function(x){ x.dispatchEvent(new Event('input')); });
+                var sx=document.querySelector('.seg .seg-btn'); if(sx) sx.click();  // sex is segmented, not a <select>
+                return { inputs: v.length, sex: !!sx };
+              })()`);
+              console.log('[smoke] consent slip registration:', JSON.stringify(filled));
+              await wait(250);
+              await js("(function(){var b=[...document.querySelectorAll('.btn-primary')].pop(); if(b) b.click();})()");
+              await wait(600);
+              const slip = await js(`(function(){
+                var boxes=[...document.querySelectorAll('.consent-perms input[type=checkbox]')];
+                var inputs=[...document.querySelectorAll('.consent-doc .text-input, .consent-fields .text-input')];
+                var body=document.body.textContent||'';
+                return {
+                  perms: boxes.length,
+                  allUnticked: boxes.every(function(b){return !b.checked;}),
+                  labels: [...document.querySelectorAll('.consent-perms label')].map(function(l){return l.textContent.trim();}),
+                  childAuto: (document.querySelectorAll('.consent-fields .text-input')[0]||{}).value||'',
+                  schoolAuto: (document.querySelectorAll('.consent-fields .text-input')[1]||{}).value||'',
+                  phone: !!document.querySelector('input[type=tel]'),
+                  pad: !!document.querySelector('canvas'),
+                  inlineName: !!document.querySelector('.consent-inline-input'),
+                  draftGone: !/BORRADOR|pendiente del texto oficial/i.test(body)
+                };
+              })()`);
+              console.log('[smoke] consent slip:', JSON.stringify(slip));
+              if (slip.perms !== 3 || !slip.allUnticked || !slip.phone || !slip.pad || !slip.draftGone) hadError = true;
+            }
+
+            // Consent restrictions (v1.3.3): a parent who declines care must
+            // produce a RED popup the clinician has to acknowledge before
+            // charting, and a standing banner afterwards. Legacy records (no
+            // per-item boxes) must stay SILENT. GDR_SMOKE_CONSENT_LIMITS is
+            // 'none' | 'partial' | 'legacy' | 'all' and is stamped onto the sim
+            // drive chart before the station loads it.
+            if (process.env.GDR_SMOKE_CONSENT_LIMITS) {
+              const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+              const js = (s) => mainWindow.webContents.executeJavaScript(s);
+              const mode = process.env.GDR_SMOKE_CONSENT_LIMITS;
+              const simDir = paths.simDrive();
+              const rd = drive.readPatient(simDir);
+              if (rd.ok) {
+                const p = rd.patient;
+                p.consent = p.consent || {};
+                p.consent.signed = true;
+                p.consent.signatory_name = 'Tutor';
+                if (mode === 'legacy') delete p.consent.permissions;
+                else if (mode === 'all') p.consent.permissions = { cleaning: true, fillings: true, extractions: true };
+                else if (mode === 'partial') p.consent.permissions = { cleaning: true, fillings: false, extractions: false };
+                else p.consent.permissions = { cleaning: false, fillings: false, extractions: false };
+                drive.writePatient(simDir, p);
+              }
+              await js("(function(){var c=document.querySelector('.drive-chip.sim'); if(c) c.click();})()");
+              await wait(1200);
+              const before = await js(`(function(){
+                var box=document.querySelector('.modal-box.modal-danger');
+                return {
+                  modal: !!box,
+                  chips: [...document.querySelectorAll('.modal-danger .consent-limit-chip')].map(function(c){return c.textContent.trim();}),
+                  hasX: !!document.querySelector('.modal-danger .modal-close'),
+                  ack: !!document.querySelector('.modal-danger .modal-actions .btn')
+                };
+              })()`);
+              // A backdrop click must NOT dismiss this one.
+              await js("(function(){var o=document.querySelector('.modal-overlay'); if(o) o.click();})()");
+              await wait(250);
+              const survived = await js("!!document.querySelector('.modal-box.modal-danger')");
+              // Acknowledge, then the standing banner must remain on screen.
+              await js("(function(){var b=document.querySelector('.modal-danger .modal-actions .btn'); if(b) b.click();})()");
+              await wait(350);
+              const after = await js(`(function(){
+                return {
+                  modal: !!document.querySelector('.modal-box.modal-danger'),
+                  banner: !!document.querySelector('.consent-limit-banner'),
+                  bannerChips: [...document.querySelectorAll('.consent-limit-banner .consent-limit-chip')].map(function(c){return c.textContent.trim();}),
+                  chartable: !!document.querySelector('.tooth')
+                };
+              })()`);
+              console.log('[smoke] consent limits mode:', mode);
+              console.log('[smoke] consent limits before:', JSON.stringify(before));
+              console.log('[smoke] consent limits backdrop-survived:', survived);
+              console.log('[smoke] consent limits after:', JSON.stringify(after));
+            }
+
             // ====================================================================
             // E2E multi-station scaffolding (TEST-ONLY, env-gated). These probes
             // drive the REAL renderer UI (same DOM/clicks a clinician makes) so a

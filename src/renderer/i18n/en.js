@@ -85,6 +85,31 @@ export const en = {
   typed_name: 'Or type the full name',
   i_consent: 'I accept the consent',
   consent_required: 'A guardian signature or name is required.',
+
+  // Permission slip (patient-facing — wording of the clinic's paper form)
+  consent_slip_title: 'Permission Slip',
+  consent_slip_intro: "Please complete and sign this form, allowing your child to be seen at Global Dental Relief's free dental clinic.",
+  consent_slip_receives: 'Every child will receive an exam, fluoride varnish and oral health education.',
+  consent_slip_lead: 'After the exam I,',
+  consent_slip_tail: ', give permission for my child to receive the following care:',
+  consent_perm_cleaning: 'Cleaning',
+  consent_perm_fillings: 'Fillings',
+  consent_perm_extractions: 'Extractions',
+  consent_child_name: "Child's Name",
+  consent_school: 'Escuela',
+  consent_parent_signature: "Parent's Signature",
+  consent_phone: 'Phone Number',
+  consent_guardian_name: 'Parent/Guardian name',
+
+  // Permission slip (clinician-facing — shown in the staff UI language)
+  consent_limits_title: 'Consent restrictions',
+  consent_limits_intro: 'The parent/guardian did NOT give permission for:',
+  consent_limits_ack: 'I understand',
+  consent_limits_banner: 'Consent restrictions on this patient',
+  consent_limits_none: 'No care was authorized on the permission slip.',
+  consent_unsigned: 'No signed permission slip on file for this patient.',
+  consent_all_granted: 'All care authorized',
+
   medical_history: 'Medical history',
   med_anything_changed: 'Has anything changed in the medical history?',
   identify: 'Identify',

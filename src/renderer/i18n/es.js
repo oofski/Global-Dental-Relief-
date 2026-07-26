@@ -84,6 +84,31 @@ export const es = {
   typed_name: 'O escriba el nombre completo',
   i_consent: 'Acepto el consentimiento',
   consent_required: 'Se requiere la firma o el nombre del tutor.',
+
+  // Permiso (para el padre/tutor — texto del formulario impreso de la clínica)
+  consent_slip_title: 'Permiso',
+  consent_slip_intro: 'Complete y firme este formulario para autorizar que su hijo(a) sea atendido(a) en la clínica dental gratuita de Global Dental Relief.',
+  consent_slip_receives: 'Todos los niños recibirán un examen, barniz de flúor y educación en salud bucal.',
+  consent_slip_lead: 'Después del examen yo,',
+  consent_slip_tail: ', doy permiso para que mi hijo(a) reciba la siguiente atención:',
+  consent_perm_cleaning: 'Limpieza',
+  consent_perm_fillings: 'Empastes',
+  consent_perm_extractions: 'Extracciones',
+  consent_child_name: 'Nombre del niño(a)',
+  consent_school: 'Escuela',
+  consent_parent_signature: 'Firma del padre/madre o tutor',
+  consent_phone: 'Número de teléfono',
+  consent_guardian_name: 'Nombre del padre/madre o tutor',
+
+  // Permiso (para el personal clínico — se muestra en el idioma del personal)
+  consent_limits_title: 'Restricciones del permiso',
+  consent_limits_intro: 'El padre/madre o tutor NO dio permiso para:',
+  consent_limits_ack: 'Entendido',
+  consent_limits_banner: 'Este paciente tiene restricciones de permiso',
+  consent_limits_none: 'No se autorizó ninguna atención en el permiso.',
+  consent_unsigned: 'Este paciente no tiene un permiso firmado en el expediente.',
+  consent_all_granted: 'Toda la atención autorizada',
+
   medical_history: 'Historia médica',
   med_anything_changed: '¿Ha cambiado algo en la historia médica? (¿Ha cambiado algo?)',
   identify: 'Identifique',

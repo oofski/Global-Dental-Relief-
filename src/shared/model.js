@@ -70,13 +70,54 @@ function activeAlerts(med) {
 }
 
 // ---- Consent (5.1 Screen C) --------------------------------------------
+// Mirrors the clinic's real paper permission slip: three individually ticked
+// opt-in boxes plus the printed child / school / phone fields.
 function newConsent() {
   return {
     signed: false,
-    signatory_name: '',
+    signatory_name: '',    // the "After the exam I, ____" printed parent/guardian name
     signature_image: null, // dataURL
-    signed_date: null
+    signed_date: null,
+    permissions: { cleaning: false, fillings: false, extractions: false },
+    child_name: '',        // child's name as written on the slip
+    school: '',            // "Escuela"
+    phone: ''              // parent phone number
   };
+}
+
+// Fixed display/report order for the three opt-in boxes.
+const PERMISSION_KEYS = ['cleaning', 'fillings', 'extractions'];
+
+/**
+ * Resolve which care a parent authorised on the permission slip.
+ *
+ * Returns { cleaning, fillings, extractions, legacy, denied } where `denied` is
+ * the granted-false keys in PERMISSION_KEYS order.
+ *
+ * LEGACY COMPATIBILITY: records written before the real slip was adopted have a
+ * consent object with NO `permissions` key. That older consent text was a single
+ * blanket authorization covering cleanings, fillings and extractions, so those
+ * records must read as ALL THREE GRANTED (legacy: true, denied: []). Only an
+ * actually-present `permissions` object can deny anything — otherwise every
+ * returning patient would trip a false "no permission" alarm.
+ *
+ * Pure and dependency-free: required by both the main process and the preload
+ * bridge. Null/absent patient or consent is treated as legacy-granted, never a throw.
+ */
+function consentPermissions(patient) {
+  const consent = patient && patient.consent;
+  const perms = consent && consent.permissions;
+  if (!perms || typeof perms !== 'object') {
+    // No permissions object at all -> legacy blanket consent.
+    return { cleaning: true, fillings: true, extractions: true, legacy: true, denied: [] };
+  }
+  const denied = [];
+  const out = { cleaning: false, fillings: false, extractions: false, legacy: false, denied };
+  PERMISSION_KEYS.forEach((k) => {
+    out[k] = !!perms[k];
+    if (!out[k]) denied.push(k);
+  });
+  return out;
 }
 
 // ---- Visit record (4.3) -------------------------------------------------
@@ -183,6 +224,8 @@ module.exports = {
   newMedicalHistory,
   activeAlerts,
   newConsent,
+  PERMISSION_KEYS,
+  consentPermissions,
   newVisit,
   newTreatmentItem,
   newPatient,

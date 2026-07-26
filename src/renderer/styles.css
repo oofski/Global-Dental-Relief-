@@ -172,12 +172,22 @@ h1,h2,h3{letter-spacing:-.01em}
 .big-info{background:var(--card);border-radius:var(--r);padding:42px;text-align:center;font-size:17px;color:var(--muted);
   box-shadow:var(--sh-1);border:1px dashed var(--line-2)}
 
-/* ---- Consent ---- */
+/* ---- Consent / permission slip ---- */
 .consent-toolbar{margin-bottom:12px}
 .consent-doc{background:#fbfcfe;border:1px solid var(--line);border-radius:var(--r-sm);padding:20px 22px;max-height:340px;overflow:auto;line-height:1.6}
 .consent-doc h3{margin-top:0;color:var(--blue-900)}
-.consent-draft-notice{background:#fff3cf;color:#73561a;font-size:12px;font-weight:700;padding:7px 11px;border-radius:var(--r-sm);margin-bottom:12px;border:1px solid #ecd99a}
+/* The slip is filled in, not just read — no inner scroll box around its inputs. */
+.consent-slip{max-height:none;overflow:visible}
+.consent-receives{font-weight:600;color:var(--blue-900)}
+/* Inline (not flex) so the name box sits on the blank inside the sentence and
+   the sentence wraps around it the way the paper form reads. */
+.consent-permission-line{line-height:2.3}
+.consent-inline-input{display:inline-block;width:auto;min-width:260px;max-width:100%;vertical-align:baseline}
+.consent-perms{display:flex;flex-wrap:wrap;gap:10px 30px;margin-top:10px;padding:12px 14px;background:#fff;border:1px solid var(--line);border-radius:var(--r-sm)}
+.consent-perms .checkbox{font-size:16px;font-weight:600}
+.consent-fields{margin-top:16px}
 .consent-sign{margin-top:18px}
+.consent-typed-echo{margin-top:6px}
 .sig-wrap{display:flex;flex-direction:column;gap:6px}
 .sig-canvas{border:1.5px dashed var(--line-2);border-radius:var(--r-sm);background:#fff;width:100%;max-width:600px;height:180px;touch-action:none}
 .sig-hint{font-size:12px;color:var(--muted)}
@@ -466,6 +476,33 @@ h1,h2,h3{letter-spacing:-.01em}
 .modal-box{background:#fff;border-radius:var(--r);padding:24px;max-width:90vw;max-height:90vh;overflow:auto;box-shadow:var(--sh-3);border-top:4px solid var(--blue-500)}
 .modal-title{margin:0 0 14px;color:var(--blue-900);font-weight:730}
 .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
+.modal-box{position:relative}
+.modal-close{position:absolute;top:8px;right:10px;width:34px;height:34px;line-height:1;font-size:24px;cursor:pointer;
+  background:transparent;border:0;border-radius:var(--r-sm);color:var(--ink-2)}
+.modal-close:hover{background:var(--bg-2)}
+
+/* Danger modal (consent restrictions) — white on --red is ~4.9:1 (AA).
+   Deliberate dismissal only: the X or the acknowledge button, never the backdrop. */
+.modal-danger{border:2px solid var(--red);border-top:4px solid var(--red);max-width:min(560px,90vw)}
+.modal-danger .modal-title{background:var(--red);color:#fff;margin:-24px -24px 16px;padding:15px 52px 15px 20px;
+  border-radius:6px 6px 0 0;text-transform:uppercase;letter-spacing:.04em;font-size:16px}
+.modal-danger .modal-close{color:#fff;top:12px}
+.modal-danger .modal-close:hover{background:rgba(255,255,255,.22)}
+.consent-limit-body{color:#8f211a;font-weight:600;line-height:1.55}
+.consent-limit-body p{margin:0 0 10px}
+.consent-limit-unsigned{font-weight:800}
+.consent-limit-none{font-weight:800;margin-top:12px}
+
+/* Standing consent-restriction banner in the station patient header.
+   Dark red on a pale red field so it stays legible next to the solid-red
+   medical alert banner without competing with it. */
+.consent-limit-banner{background:var(--red-soft);border:1px solid #f2cbc6;border-left:5px solid var(--red);border-radius:var(--r-sm);
+  padding:13px 17px;margin-bottom:14px;box-shadow:var(--sh-1);color:#8f211a}
+.consent-limit-title{font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:#9a2b21;margin-bottom:7px}
+.consent-limit-line{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-weight:600;font-size:13.5px}
+.consent-limit-line + .consent-limit-line{margin-top:6px}
+.consent-limit-items{display:flex;flex-wrap:wrap;gap:8px}
+.consent-limit-chip{background:var(--red);color:#fff;padding:4px 11px;border-radius:4px;font-size:13.5px;font-weight:700}
 
 /* spinner */
 .spinner{display:flex;align-items:center;gap:12px;justify-content:center;padding:42px;color:var(--muted)}

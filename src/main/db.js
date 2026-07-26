@@ -152,7 +152,18 @@ function mergePatient(existing, incoming) {
     const b = incoming.medical_history.last_modified;
     if (!a || (b && b >= a)) merged.medical_history = incoming.medical_history;
   }
-  if (incoming.consent && incoming.consent.signed) merged.consent = incoming.consent;
+  // Consent: prefer the incoming signed copy, but never DOWNGRADE. An older
+  // (pre-permission-slip) drive copy has no `permissions` object, so a wholesale
+  // replace would silently erase the per-treatment opt-ins the master already
+  // holds. Carry forward any slip detail the incoming copy lacks.
+  if (incoming.consent && incoming.consent.signed) {
+    const prior = merged.consent || {};
+    const next = JSON.parse(JSON.stringify(incoming.consent));
+    if (!next.permissions && prior.permissions) next.permissions = prior.permissions;
+    ['child_name', 'school', 'phone', 'signatory_name', 'signature_image', 'signed_date']
+      .forEach((k) => { if (!next[k] && prior[k]) next[k] = prior[k]; });
+    merged.consent = next;
+  }
   // Visits: field-merge same visit_id (so a partial save from one station never
   // clobbers another station's fields). Boolean *_done flags OR together,
   // treatment_items union by item id, scalars prefer the more-recently modified.

@@ -4,6 +4,32 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.3.3 — 2026-07-26
+The clinic's real permission slip, and consent enforcement at the chair.
+- **The consent screen is now the clinic's actual permission slip.** The old
+  placeholder consent text is gone. The screen mirrors the paper form top to
+  bottom: the intro, "every child will receive an exam, fluoride varnish and
+  oral health education", the permission sentence with the parent's name on the
+  blank, the three care boxes, Child's Name / Escuela, signature, phone.
+- **Three tick boxes — Cleaning, Fillings, Extractions.** Each is opt-in: they
+  start unticked and the parent authorizes each one individually.
+- **Child's Name and Escuela autopopulate** from what the front desk already
+  typed at registration; both stay editable.
+- **Signature unchanged** — the parent can still sign on screen or type their
+  name instead.
+- **Phone number** captured on the slip.
+- **Consent enforcement at the dentist and hygienist stations.** When a patient
+  is loaded, any care the parent declined raises a red popup naming it, which
+  the clinician has to actively X out — a click outside will not dismiss it.
+  After acknowledging, a red banner stays on screen while they chart.
+  Charting is never blocked, so a needed treatment can still be recorded.
+- Records created before this release are unaffected: their consent was a single
+  blanket authorization, so they are treated as fully granted and never raise a
+  false alarm.
+- Quality: new `npm run v133` suite (57 assertions) plus 12 new real-app e2e
+  checks. Full regression green: smoke 16, flow 198, feature 54, returning 63,
+  v131 121, v132 40, v133 57, e2e 32 (real app); i18n parity 405/405.
+
 ## v1.3.2 — 2026-07-09
 Changes from Becky Bay's call.
 - **Tooth chart simplified to the hybrid/mixed view only.** Removed the adult /

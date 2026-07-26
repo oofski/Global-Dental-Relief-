@@ -1,5 +1,5 @@
 /* Reusable clinical UI pieces shared across stations. */
-import { h, fmtDate, fmtDateTime, toast, spinner, mount, checkbox } from '../util.js';
+import { h, fmtDate, fmtDateTime, toast, spinner, mount, checkbox, modal } from '../util.js';
 import { T } from '../i18n/index.js';
 
 const C = window.api.codes;
@@ -25,6 +25,73 @@ export function alertBanner(patient) {
         a.text ? h('span', { text: `: ${a.text}` }) : null
       ])
     ))
+  ]);
+}
+
+// ---- Consent restrictions (v1.3.3) ----
+// The parent ticks each care option on the permission slip; anything left
+// unticked must never be performed. Both the acknowledge-first modal and the
+// standing banner below read from the SAME resolver so the clinical stations
+// cannot drift apart.
+//
+// Legacy records (consent written before the slip had per-item boxes) come back
+// from consentPermissions() as legacy:true with denied:[] — that was a blanket
+// authorization, so returning patients from earlier versions stay silent.
+const PERMISSION_LABELS = {
+  cleaning: T.consent_perm_cleaning,
+  fillings: T.consent_perm_fillings,
+  extractions: T.consent_perm_extractions
+};
+
+function consentLimits(patient) {
+  const perms = window.api.model.consentPermissions(patient);
+  if (perms.legacy) return null;
+  const denied = perms.denied || [];
+  const unsigned = !(patient && patient.consent && patient.consent.signed);
+  if (!denied.length && !unsigned) return null;
+  return { denied, unsigned, allDenied: denied.length === 3 };
+}
+
+function deniedChips(info) {
+  return h('div', { class: 'consent-limit-items' }, info.denied.map((k) =>
+    h('span', { class: 'consent-limit-chip', text: PERMISSION_LABELS[k] || k })));
+}
+
+// Modal the clinician must actively dismiss (X or "I understand") before
+// charting — a backdrop click does NOT close it. Never blocks charting itself.
+// Returns a promise; resolves immediately when there is nothing to warn about.
+export function consentLimitsAlert(patient) {
+  const info = consentLimits(patient);
+  if (!info) return Promise.resolve(false);
+  const body = h('div', { class: 'consent-limit-body' }, [
+    info.unsigned ? h('p', { class: 'consent-limit-unsigned', text: T.consent_unsigned }) : null,
+    info.denied.length ? h('p', { text: T.consent_limits_intro }) : null,
+    info.denied.length ? deniedChips(info) : null,
+    info.allDenied ? h('p', { class: 'consent-limit-none', text: T.consent_limits_none }) : null
+  ]);
+  return modal({
+    title: T.consent_limits_title,
+    body,
+    className: 'modal-danger',
+    dismissOnBackdrop: false,
+    closeButton: true,
+    actions: [{ label: T.consent_limits_ack, value: true, danger: true }]
+  });
+}
+
+// Standing banner for the station patient header — keeps the restriction on
+// screen after the modal is acknowledged. Renders nothing when unrestricted.
+export function consentLimitsBanner(patient) {
+  const info = consentLimits(patient);
+  if (!info) return null;
+  return h('div', { class: 'consent-limit-banner' }, [
+    h('div', { class: 'consent-limit-title', text: '⛔ ' + T.consent_limits_banner }),
+    info.unsigned ? h('div', { class: 'consent-limit-line', text: T.consent_unsigned }) : null,
+    info.denied.length ? h('div', { class: 'consent-limit-line' }, [
+      h('span', { text: T.consent_limits_intro + ' ' }),
+      deniedChips(info)
+    ]) : null,
+    info.allDenied ? h('div', { class: 'consent-limit-line', text: T.consent_limits_none }) : null
   ]);
 }
 

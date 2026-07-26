@@ -97,7 +97,11 @@ export function toast(message, kind = 'info', ms = 3500) {
 }
 
 // ---- Modal dialog ----
-export function modal({ title, body, actions }) {
+// Options beyond the defaults are for dialogs that must be acknowledged
+// deliberately (consent restrictions): `dismissOnBackdrop: false` disables the
+// click-outside shortcut, `closeButton: true` adds the corner X, and
+// `className` styles the box (e.g. 'modal-danger').
+export function modal({ title, body, actions, className, dismissOnBackdrop = true, closeButton = false }) {
   return new Promise((resolve) => {
     const overlay = h('div', { class: 'modal-overlay' });
     const close = (val) => { overlay.remove(); resolve(val); };
@@ -110,13 +114,14 @@ export function modal({ title, body, actions }) {
         }, a.label)
       )
     );
-    const box = h('div', { class: 'modal-box' }, [
+    const box = h('div', { class: 'modal-box' + (className ? ' ' + className : '') }, [
       title ? h('h3', { class: 'modal-title', text: title }) : null,
+      closeButton ? h('button', { class: 'modal-close', type: 'button', 'aria-label': T.close || '×', onClick: () => close(undefined) }, '×') : null,
       h('div', { class: 'modal-body' }, bodyNode),
       actionRow
     ]);
     overlay.appendChild(box);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(undefined); });
+    overlay.addEventListener('click', (e) => { if (dismissOnBackdrop && e.target === overlay) close(undefined); });
     document.body.appendChild(overlay);
   });
 }

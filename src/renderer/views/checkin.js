@@ -5,13 +5,13 @@ import { medForm } from '../components/medform.js';
 import { clearPatientsButton } from '../components/cleardata.js';
 import { signaturePad } from '../components/signature.js';
 import { tts } from '../components/tts.js';
-import { CONSENT_TITLE, CONSENT_DRAFT_NOTICE, CONSENT_PARAGRAPHS, consentSpeechText } from '../consent.js';
+import { CONSENT_SLIP, consentSpeechText } from '../consent.js';
 
 export function renderCheckin(container, ctx) {
   const W = {
     mode: null,            // 'new' | 'returning'
     draft: { school_group: '', first_name: '', last_name: '', age: '', sex: '' },
-    consent: { signed: false, signatory_name: '', signature_image: null },
+    consent: blankConsent(),
     med: window.api.model.newMedicalHistory(),
     oh1: false,
     drive_number: '',
@@ -118,12 +118,42 @@ export function renderCheckin(container, ctx) {
     ]);
   }
 
-  // ---- Screen C: Consent (new) ----
+  // ---- Screen C: Permission slip (new) ----
+  // Mirrors the clinic's paper form top to bottom: intro, what every child
+  // receives, the permission sentence (with the guardian's name on the blank),
+  // the three opt-in care boxes, child/school, signature, phone.
   function screenConsent() {
     let reading = false;
     const sig = signaturePad((dataURL) => { W.consent.signature_image = dataURL; });
-    const typedName = h('input', { class: 'text-input', placeholder: T.typed_name, value: W.consent.signatory_name });
-    typedName.addEventListener('input', () => { W.consent.signatory_name = typedName.value.trim(); });
+
+    // Autopopulate from what registration already collected (screenRegister
+    // commits into W.draft). Only fills a blank field, so an edit survives Back.
+    if (!W.consent.child_name) {
+      W.consent.child_name = [W.draft.first_name, W.draft.last_name].filter(Boolean).join(' ').trim();
+    }
+    if (!W.consent.school) W.consent.school = W.draft.school_group || '';
+
+    // The blank in the permission sentence IS the typed-name capture — one
+    // field only, so the signature fallback and the printed name never disagree.
+    const guardian = h('input', { class: 'text-input consent-inline-input', placeholder: PT.consent_guardian_name, value: W.consent.signatory_name });
+    guardian.addEventListener('input', () => { W.consent.signatory_name = guardian.value.trim(); syncTypedEcho(); });
+
+    const childName = h('input', { class: 'text-input', value: W.consent.child_name });
+    childName.addEventListener('input', () => { W.consent.child_name = childName.value; });
+    const school = h('input', { class: 'text-input', value: W.consent.school });
+    school.addEventListener('input', () => { W.consent.school = school.value; });
+    const phone = h('input', { class: 'text-input', type: 'tel', value: W.consent.phone });
+    phone.addEventListener('input', () => { W.consent.phone = phone.value; });
+
+    // Opt-in: every box starts unchecked and unchecked is a valid answer.
+    const permBoxes = CONSENT_SLIP.permissions.map(([key, label]) =>
+      checkbox(label, W.consent.permissions[key], (v) => { W.consent.permissions[key] = v; }));
+
+    // The typed name lives above; echo it here so the "type it out instead of
+    // signing" option stays visible in the signature block.
+    const typedEcho = h('div', { class: 'field-hint consent-typed-echo' });
+    function syncTypedEcho() { typedEcho.textContent = `${T.typed_name}: ${W.consent.signatory_name || '—'}`; }
+    syncTypedEcho();
 
     const readBtn = h('button', { class: 'btn btn-secondary' });
     function setReadLabel() { readBtn.textContent = reading ? T.stop_reading : T.read_aloud; }
@@ -135,18 +165,25 @@ export function renderCheckin(container, ctx) {
       reading = true; setReadLabel();
     });
 
-    const consentBody = h('div', { class: 'consent-doc' }, [
-      h('div', { class: 'consent-draft-notice', text: CONSENT_DRAFT_NOTICE }),
-      h('h3', { text: CONSENT_TITLE }),
-      ...CONSENT_PARAGRAPHS.map((p) => h('p', { text: p }))
+    const consentBody = h('div', { class: 'consent-doc consent-slip' }, [
+      h('h3', { text: CONSENT_SLIP.title }),
+      h('p', { text: CONSENT_SLIP.intro }),
+      h('p', { class: 'consent-receives', text: CONSENT_SLIP.receives }),
+      h('p', { class: 'consent-permission-line' }, [
+        CONSENT_SLIP.lead + ' ', guardian, CONSENT_SLIP.tail
+      ]),
+      h('div', { class: 'consent-perms' }, permBoxes)
     ]);
 
     function commit() {
       const hasSig = !!W.consent.signature_image;
-      const hasName = !!(typedName.value && typedName.value.trim());
+      const hasName = !!(guardian.value && guardian.value.trim());
       if (!hasSig && !hasName) { toast(T.consent_required, 'warn'); return false; }
       W.consent.signed = true;
-      W.consent.signatory_name = typedName.value.trim();
+      W.consent.signatory_name = guardian.value.trim();
+      W.consent.child_name = childName.value.trim();
+      W.consent.school = school.value.trim();
+      W.consent.phone = phone.value.trim();
       W.consent.signed_date = window.api.model.nowISO();
       return true;
     }
@@ -154,10 +191,17 @@ export function renderCheckin(container, ctx) {
     shell(T.consent_title, [
       h('div', { class: 'consent-toolbar' }, [readBtn]),
       consentBody,
+      h('div', { class: 'form-grid consent-fields' }, [
+        field(PT.consent_child_name, childName),
+        field(PT.consent_school, school)
+      ]),
       h('div', { class: 'consent-sign' }, [
-        h('div', { class: 'field-label', text: T.signature }),
+        h('div', { class: 'field-label', text: PT.consent_parent_signature }),
         sig.node,
-        field(T.typed_name, typedName)
+        typedEcho
+      ]),
+      h('div', { class: 'consent-fields' }, [
+        field(PT.consent_phone, phone, { hint: PT.optional })
       ])
     ], [
       h('button', { class: 'btn btn-ghost', onClick: () => { tts.stop(); screenRegister(); } }, T.back),
@@ -227,11 +271,21 @@ export function renderCheckin(container, ctx) {
           });
           if (!created.ok) { toast(T.error, 'error'); screenDrive(); return; }
           patient = created.data;
+          // Explicit copy — every slip field must be listed here or it is
+          // silently dropped on the way to the record.
           patient.consent = {
             signed: W.consent.signed,
             signatory_name: W.consent.signatory_name,
             signature_image: W.consent.signature_image,
-            signed_date: W.consent.signed_date
+            signed_date: W.consent.signed_date,
+            permissions: {
+              cleaning: !!W.consent.permissions.cleaning,
+              fillings: !!W.consent.permissions.fillings,
+              extractions: !!W.consent.permissions.extractions
+            },
+            child_name: W.consent.child_name,
+            school: W.consent.school,
+            phone: W.consent.phone
           };
           patient.medical_history = W.med;
         } else {
@@ -397,7 +451,7 @@ export function renderCheckin(container, ctx) {
   function resetWizard() {
     W.mode = null;
     W.draft = { school_group: '', first_name: '', last_name: '', age: '', sex: '' };
-    W.consent = { signed: false, signatory_name: '', signature_image: null };
+    W.consent = blankConsent();
     W.med = window.api.model.newMedicalHistory();
     W.oh1 = false; W.drive_number = ''; W.drivePath = null;
     W.existing = null; W.medChanged = false; W.nextNumber = null;
@@ -407,6 +461,20 @@ export function renderCheckin(container, ctx) {
 }
 
 // ---- helpers ----
+// Working copy of the permission slip (same shape as model.newConsent()).
+function blankConsent() {
+  return {
+    signed: false,
+    signatory_name: '',
+    signature_image: null,
+    signed_date: null,
+    permissions: { cleaning: false, fillings: false, extractions: false },
+    child_name: '',
+    school: '',
+    phone: ''
+  };
+}
+
 function segmented(opts, value, onChange) {
   const row = h('div', { class: 'seg' });
   opts.forEach((o) => {
