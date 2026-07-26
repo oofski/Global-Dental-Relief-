@@ -227,6 +227,9 @@ function createWindow() {
                 p.consent = p.consent || {};
                 p.consent.signed = true;
                 p.consent.signatory_name = 'Tutor';
+                // Legacy records predate the slip, so they carry no phone either.
+                if (mode !== 'legacy') p.consent.phone = '555-0143';
+                else delete p.consent.phone;
                 if (mode === 'legacy') delete p.consent.permissions;
                 else if (mode === 'all') p.consent.permissions = { cleaning: true, fillings: true, extractions: true };
                 else if (mode === 'partial') p.consent.permissions = { cleaning: true, fillings: false, extractions: false };
@@ -252,11 +255,13 @@ function createWindow() {
               await js("(function(){var b=document.querySelector('.modal-danger .modal-actions .btn'); if(b) b.click();})()");
               await wait(350);
               const after = await js(`(function(){
+                var ph=document.querySelector('.summary-phone-value');
                 return {
                   modal: !!document.querySelector('.modal-box.modal-danger'),
                   banner: !!document.querySelector('.consent-limit-banner'),
                   bannerChips: [...document.querySelectorAll('.consent-limit-banner .consent-limit-chip')].map(function(c){return c.textContent.trim();}),
-                  chartable: !!document.querySelector('.tooth')
+                  chartable: !!document.querySelector('.tooth'),
+                  phone: ph ? ph.textContent.trim() : null
                 };
               })()`);
               console.log('[smoke] consent limits mode:', mode);

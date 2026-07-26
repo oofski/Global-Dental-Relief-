@@ -214,6 +214,11 @@ h1,h2,h3{letter-spacing:-.01em}
 .summary-num{font-size:25px;font-weight:800;color:var(--blue);min-width:82px;letter-spacing:-.02em}
 .summary-name{font-size:18px;font-weight:720}
 .summary-meta{color:var(--muted);font-size:13.5px;margin-top:2px}
+/* Guardian phone from the permission slip: readable at a glance across the
+   room, and selectable so staff can copy it. */
+.summary-phone{font-size:13.5px;margin-top:3px}
+.summary-phone-label{color:var(--muted)}
+.summary-phone-value{font-weight:700;color:var(--ink);letter-spacing:.01em;user-select:text}
 
 /* ---- Panels ---- */
 .panels-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}

@@ -105,7 +105,16 @@ export function patientSummary(patient) {
         `${T.age}: ${patient.age_at_first_visit ?? '—'}`,
         `   ${T.sex}: ${patient.sex || '—'}`,
         `   ${T.school_group}: ${patient.school_group || '—'}`
-      ].join('  '))
+      ].join('  ')),
+      // Guardian phone from the permission slip — so staff can reach a parent
+      // mid-visit without reopening consent. Rendered only when one was taken,
+      // rather than showing an empty row on every pre-slip record.
+      (patient.consent && patient.consent.phone)
+        ? h('div', { class: 'summary-phone' }, [
+          h('span', { class: 'summary-phone-label', text: T.consent_phone + ': ' }),
+          h('span', { class: 'summary-phone-value', text: patient.consent.phone })
+        ])
+        : null
     ])
   ]);
 }

@@ -327,6 +327,13 @@ function test6_sourceProof() {
   truthy(/consentLimitsBanner/.test(dentist) && /consentLimitsBanner/.test(cleaning),
     'both stations render the identical shared banner');
 
+  // The guardian phone is surfaced in the station patient header, but only when
+  // one was actually captured — a pre-slip record must not show an empty row.
+  truthy(/consent\.phone/.test(shared) && /summary-phone/.test(shared),
+    'patient summary surfaces the guardian phone from the slip');
+  truthy(/\(patient\.consent && patient\.consent\.phone\)[\s\S]{0,40}\?/.test(shared),
+    'the phone row is conditional (no empty row on records without one)');
+
   // i18n parity: the whole suite depends on en/es staying key-for-key parallel.
   const enSrc = readSrc('src/renderer/i18n/en.js');
   const esSrc = readSrc('src/renderer/i18n/es.js');

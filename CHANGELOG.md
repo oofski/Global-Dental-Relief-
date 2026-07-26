@@ -4,6 +4,13 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.3.4 — 2026-07-26
+- **The parent's phone number now shows in the patient header** at every
+  station, so staff can reach a guardian mid-visit without reopening the
+  consent screen. It only appears when a phone was actually taken on the slip —
+  records without one show no empty row.
+- Quality: `npm run v133` now 59 assertions; e2e 34 real-app checks.
+
 ## v1.3.3 — 2026-07-26
 The clinic's real permission slip, and consent enforcement at the chair.
 - **The consent screen is now the clinic's actual permission slip.** The old

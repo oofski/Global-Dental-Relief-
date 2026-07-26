@@ -154,6 +154,8 @@ console.log('\n=== 9. v1.3.3 consent restrictions (DOCTOR + HYGIENIST launches) 
   record('9d', 'v1.3.3 after acknowledging, the red banner stands and charting still works',
     pAfter.modal === false && pAfter.banner === true && pAfter.chartable === true,
     `modalGone=${pAfter.modal === false} banner=${pAfter.banner} chartable=${pAfter.chartable}`);
+  record('9i', "v1.3.3 the guardian's phone from the slip shows in the station patient header",
+    pAfter.phone === '555-0143', `phoneShown=${pAfter.phone}`);
 
   // 9e: LEGACY record (pre-slip consent, no per-item boxes) must stay silent.
   seed([], 'consent legacy');
@@ -163,6 +165,8 @@ console.log('\n=== 9. v1.3.3 consent restrictions (DOCTOR + HYGIENIST launches) 
   record('9e', 'v1.3.3 LEGACY consent stays silent (no false alarm on returning patients)',
     lBefore.modal === false && lAfter.banner === false,
     `modal=${lBefore.modal} banner=${lAfter.banner}`);
+  record('9h', 'v1.3.3 a record with no slip phone shows NO phone row (no empty field)',
+    lAfter.phone === null, `phoneRow=${lAfter.phone === null ? 'absent' : lAfter.phone}`);
 
   // 9f: parent ticked everything -> no warning at all.
   seed([], 'consent all granted');
