@@ -63,6 +63,44 @@ function createWindow() {
           console.log('[smoke] login subtitle:', JSON.stringify(subText));
           if (inputs < 2) hadError = true;
 
+          // ------------------------------------------------------------------
+          // Product screenshots (TEST-ONLY, env-gated). GDR_SHOTS names the
+          // screen to capture and GDR_SHOTS_OUT the PNG path. Used by
+          // scripts/screenshots.js to produce real product imagery from the
+          // running app rather than mockups. Never alters app behaviour.
+          // ------------------------------------------------------------------
+          const shotWait = (ms) => new Promise((r) => setTimeout(r, ms));
+          const takeShot = async () => {
+            const out = process.env.GDR_SHOTS_OUT;
+            if (!out) return;
+            // Scrollbars are chrome, not product — hide them for the capture.
+            await mainWindow.webContents.insertCSS(
+              '::-webkit-scrollbar{width:0!important;height:0!important;background:transparent!important}');
+            // GDR_SHOTS_FULL grows the window to the full document height so a
+            // tall screen (a form, a long chart) is captured whole instead of
+            // cut off at the fold. Skipped for modal shots, where the dialog is
+            // centred in the viewport and a tall page would strand it.
+            if (process.env.GDR_SHOTS_FULL) {
+              const need = await mainWindow.webContents.executeJavaScript(
+                'Math.ceil(Math.max(document.body.scrollHeight, document.documentElement.scrollHeight))');
+              const [w] = mainWindow.getContentSize();
+              mainWindow.setContentSize(w, Math.max(700, Math.min(Number(need) + 24, 4200)));
+              await shotWait(700);
+            }
+            await shotWait(500);
+            const img = await mainWindow.webContents.capturePage();
+            fs.mkdirSync(path.dirname(out), { recursive: true });
+            fs.writeFileSync(out, img.toPNG());
+            const sz = img.getSize();
+            console.log(`[shot] wrote ${out} (${sz.width}x${sz.height})`);
+          };
+
+          if (process.env.GDR_SHOTS === 'login') {
+            await takeShot();
+            app.exit(0);
+            return;
+          }
+
           // Optional: drive a real login (GDR_SMOKE_LOGIN="user:pass").
           if (process.env.GDR_SMOKE_LOGIN) {
             const [u, p] = process.env.GDR_SMOKE_LOGIN.split(':');
@@ -473,6 +511,69 @@ function createWindow() {
               console.log('[smoke] reports db patient count badge:', JSON.stringify(dbCount));
               const nonzero = await mainWindow.webContents.executeJavaScript("document.querySelectorAll('.report-table tbody tr:not(.row-zero)').length");
               console.log('[smoke] reports non-zero rows:', nonzero);
+            }
+
+            // ----------------------------------------------------------------
+            // Product screenshots for the post-login station screens.
+            // ----------------------------------------------------------------
+            if (process.env.GDR_SHOTS && process.env.GDR_SHOTS !== 'login') {
+              const shot = process.env.GDR_SHOTS;
+              const jsx = (s) => mainWindow.webContents.executeJavaScript(s);
+              const loadSimDrive = async () => {
+                await jsx("(function(){var c=document.querySelector('.drive-chip.sim'); if(c) c.click();})()");
+                await shotWait(1400);
+              };
+
+              if (shot === 'checkin') {
+                // Front desk landing: New vs Returning.
+                await shotWait(400);
+              } else if (shot === 'slip') {
+                await jsx("(function(){var b=document.querySelector('.choice-btn.choice-new'); if(b) b.click();})()");
+                await shotWait(900);
+                await jsx(`(function(){
+                  var v=[...document.querySelectorAll('.text-input')];
+                  if(v[0]) v[0].value='Sofia';
+                  if(v[1]) v[1].value='Hernandez';
+                  if(v[2]) v[2].value='Escuela Primaria Benito Juarez';
+                  if(v[3]) v[3].value='9';
+                  v.forEach(function(x){ x.dispatchEvent(new Event('input')); });
+                  var sx=[...document.querySelectorAll('.seg .seg-btn')][1]; if(sx) sx.click();
+                })()`);
+                await shotWait(300);
+                await jsx("(function(){var b=[...document.querySelectorAll('.btn-primary')].pop(); if(b) b.click();})()");
+                await shotWait(700);
+                // Tick two of the three boxes so the form reads as a real,
+                // partially-authorized slip rather than an empty template.
+                await jsx(`(function(){
+                  var b=[...document.querySelectorAll('.consent-perms input[type=checkbox]')];
+                  if(b[0]) b[0].click();
+                  if(b[1]) b[1].click();
+                  var g=document.querySelector('.consent-inline-input');
+                  if(g){ g.value='Maria Hernandez'; g.dispatchEvent(new Event('input')); }
+                  var t=document.querySelector('input[type=tel]');
+                  if(t){ t.value='555 128 4471'; t.dispatchEvent(new Event('input')); }
+                })()`);
+                await shotWait(400);
+              } else if (shot === 'consent-popup') {
+                await loadSimDrive();   // sim chart is stamped with a denied slip
+              } else if (shot === 'dentist' || shot === 'cleaning' || shot === 'fluoride' || shot === 'checkout') {
+                await loadSimDrive();
+                // Dismiss any consent dialog so the station itself is the subject.
+                await jsx("(function(){var b=document.querySelector('.modal-danger .modal-actions .btn'); if(b) b.click();})()");
+                await shotWait(400);
+                // A collapsed panel sitting beside a taller one stretches into a
+                // large empty card; open them so the shot shows real content.
+                await jsx("(function(){[...document.querySelectorAll('.panels-row details.panel')].forEach(function(d){ d.open = true; });})()");
+                await shotWait(500);
+              } else if (shot === 'reports') {
+                await jsx("(function(){var t=[...document.querySelectorAll('.tab')].find(function(x){return /Report|Informe/i.test(x.textContent);}); if(t) t.click();})()");
+                await shotWait(900);
+                await jsx("(function(){var b=[...document.querySelectorAll('.preset-row .btn')].find(function(x){return /All time|Todo|Siempre/i.test(x.textContent);}); if(b) b.click();})()");
+                await shotWait(900);
+              }
+              await takeShot();
+              app.exit(0);
+              return;
             }
           }
         } catch (e) { hadError = true; console.error('[smoke] eval failed', e); }
