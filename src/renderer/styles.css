@@ -221,7 +221,9 @@ h1,h2,h3{letter-spacing:-.01em}
 .summary-phone-value{font-weight:700;color:var(--ink);letter-spacing:.01em;user-select:text}
 
 /* ---- Panels ---- */
-.panels-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+/* align-items:start — grid items stretch to the row height by default, which
+   turned a collapsed panel beside an open one into a tall empty card. */
+.panels-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:start}
 .panel{background:var(--card);border-radius:var(--r-sm);box-shadow:var(--sh-1);padding:2px 15px;border:1px solid var(--line)}
 .panel summary{cursor:pointer;font-weight:650;padding:12px 4px;color:var(--blue-900)}
 .panel-body{padding:4px 4px 13px}

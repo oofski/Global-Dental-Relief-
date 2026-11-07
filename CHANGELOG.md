@@ -4,6 +4,14 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.3.5 — 2026-11-07
+- **Fixed: collapsed side panels no longer stretch into a tall empty card.** On the
+  dentist, hygienist and fluoride screens, a collapsed panel (e.g. Medical history)
+  sitting beside an open one grew to match its height, leaving a large blank white
+  box. Each panel now keeps its own height.
+- Quality: new real-app e2e check 5e measures the panel heights directly (it failed
+  on the old layout: 213px vs 213px; passes now: 52px vs 213px). e2e 35/35.
+
 ## v1.3.4 — 2026-07-26
 - **The parent's phone number now shows in the patient header** at every
   station, so staff can reach a guardian mid-visit without reopening the

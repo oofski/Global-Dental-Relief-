@@ -168,6 +168,14 @@ function createWindow() {
               await mainWindow.webContents.executeJavaScript("var c=document.querySelector('.drive-chip.sim'); if(c) c.click();"); await wait(800);
               const panels = await mainWindow.webContents.executeJavaScript("[...document.querySelectorAll('.panel summary')].map(s=>s.textContent)");
               console.log('[smoke] context panels:', JSON.stringify(panels));
+              // Side-by-side panel heights in the .panels-row (closed medical
+              // history beside the open treatment panel). A collapsed panel
+              // must keep its own height, not stretch to match its neighbour.
+              const rowHeights = await mainWindow.webContents.executeJavaScript(`(function(){
+                var row=document.querySelector('.panels-row'); if(!row) return null;
+                return [...row.children].map(function(c){ return { open: !!c.open, h: Math.round(c.getBoundingClientRect().height) }; });
+              })()`);
+              console.log('[smoke] panels-row heights:', JSON.stringify(rowHeights));
               if (panels.length < 2) hadError = true;
             }
 
@@ -561,8 +569,8 @@ function createWindow() {
                 // Dismiss any consent dialog so the station itself is the subject.
                 await jsx("(function(){var b=document.querySelector('.modal-danger .modal-actions .btn'); if(b) b.click();})()");
                 await shotWait(400);
-                // A collapsed panel sitting beside a taller one stretches into a
-                // large empty card; open them so the shot shows real content.
+                // Open the side-by-side context panels so the shot shows the
+                // medical/visit detail rather than just their headers.
                 await jsx("(function(){[...document.querySelectorAll('.panels-row details.panel')].forEach(function(d){ d.open = true; });})()");
                 await shotWait(500);
               } else if (shot === 'reports') {

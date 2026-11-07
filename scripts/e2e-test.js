@@ -222,6 +222,16 @@ seed(['--with-dentist'], 'post-dentist');
   const p = find(lines, /context panels/);
   const ok = /Medical history/.test(p) && /Treatment this visit/.test(p) && /Visit history/.test(p);
   record('5d', 'v1.1.1 cleaning shows Medical history + Treatment this visit + Visit history', ok, p.replace('[smoke] ', '').trim());
+
+  // v1.3.5: a collapsed side panel must not stretch into a tall empty card to
+  // match the open panel beside it (the grid row used to stretch both).
+  let hs = null;
+  try { hs = JSON.parse(find(lines, /panels-row heights:/).replace(/^.*heights:\s*/, '')); } catch (_) { hs = null; }
+  const closed = (hs || []).find((x) => !x.open);
+  const opened = (hs || []).find((x) => x.open);
+  record('5e', 'v1.3.5 a collapsed panel keeps its own height beside an open one (no empty stretched card)',
+    !!(closed && opened && opened.h > closed.h * 2 && closed.h < 90),
+    hs ? `closed=${closed && closed.h}px open=${opened && opened.h}px` : 'no heights captured');
 }
 
 // header brand-logo via an admin launch (header rendered after login)
