@@ -13,13 +13,23 @@ auto-updater).
   cannot drift. Virtual drives stand in for USB sticks; exports download in the
   browser; each browser has its own login, so testers at different stations don't
   collide. Locked behind a site password, with test-data-only banners.
+- **Security review before go-live.** An independent review of the web copy
+  (confirmed against a running server) found that anyone holding only the site
+  password could read and rewrite patient records, and download another user's
+  master-DB export. Fixed: every patient/drive/report request now requires a
+  station sign-in and is limited to the roles whose screens make it; exports can
+  only be downloaded by the browser that made them; the site password must be 12+
+  characters and each wrong guess is delayed; session count and request sizes are
+  capped. Each fix has a test that fails without it.
 - **Release safety:** a Windows release is now published only when the version
   number is new. Previously any push re-published over the current version's
   installer, so routine test pushes could have replaced what clinics download.
-- Desktop app: internal refactor only (handlers moved to src/main/api.js) — no
-  visible change. Verified unchanged by the full real-app suite (e2e 36/36).
-- Quality: new `npm run web-test` (24 checks: desktop/web interface parity,
-  server security, and a full clinic visit in a real browser).
+- Desktop app: no visible change. Handlers moved to src/main/api.js, and each
+  request is now checked against the signed-in station's role — set to exactly
+  what that station's screens already do, so every workflow is unaffected
+  (verified by the full real-app suite, e2e 36/36).
+- Quality: new `npm run web-test` (31 checks: desktop/web interface parity,
+  server security and role separation, and a full clinic visit in a real browser).
 
 ## v1.3.6 — 2026-11-07
 - **Fixed: the brand font now actually loads.** Since v1.1.4 the stylesheet pointed

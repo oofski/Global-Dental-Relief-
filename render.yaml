@@ -30,8 +30,9 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
-      # The site password every tester types once per browser. Render prompts
-      # for it when the Blueprint is created; the server will not start without it.
+      # The site password every tester types once per browser — the real lock on
+      # this site. Render prompts for it when the Blueprint is created; the server
+      # will not start without one of at least 12 characters.
       - key: GDR_WEB_PASSWORD
         sync: false
       - key: GDR_WEB_USER

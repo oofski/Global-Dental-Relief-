@@ -145,6 +145,35 @@ const call = (port, channel, p) => req(port, '/api/' + channel, {
   method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ p })
 });
 
+// A tester's browser over raw HTTP: keeps its session cookie, optionally signed
+// in as a station. Lets the role checks be tested exactly as a browser hits them.
+async function asStation(port, user) {
+  let cookie = '';
+  const headers = (extra) => Object.assign({ Authorization: AUTH }, cookie ? { Cookie: cookie } : {}, extra || {});
+  const callAs = async (channel, p) => {
+    const res = await fetch(`http://127.0.0.1:${port}/api/${channel}`, {
+      method: 'POST', redirect: 'manual', headers: headers({ 'Content-Type': 'application/json' }), body: JSON.stringify({ p })
+    });
+    const sc = res.headers.get('set-cookie');
+    if (sc) cookie = sc.split(';')[0];
+    const text = await res.text();
+    let r = null; try { r = JSON.parse(text).r; } catch (_) {}
+    return { status: res.status, text, r };
+  };
+  const download = async (name) => {
+    const res = await fetch(`http://127.0.0.1:${port}/web/download?f=${encodeURIComponent(name)}`, { headers: headers() });
+    return { status: res.status, text: await res.text() };
+  };
+  if (user) {
+    const li = await callAs('auth:login', { username: user, password: 'welcome123' });
+    if (!li.r || !li.r.ok) throw new Error('sign-in failed for ' + user);
+  } else {
+    await callAs('config:get'); // obtain a session cookie without signing in
+  }
+  return { call: callAs, download };
+}
+const err = (res) => (res.r && res.r.error) || (res.r && res.r.ok ? 'ok' : 'status_' + res.status);
+
 // ---------------------------------------------------------------------------
 // B. Server security
 // ---------------------------------------------------------------------------
@@ -179,13 +208,20 @@ async function partB() {
     record('B5', 'server source / config / traversal paths are not served', leakStatus.every((s) => s === 404 || s === 400),
       leaks.map((u, i) => `${u}=${leakStatus[i]}`).join(' '));
 
+    // Signed in as roles that MAY read/write/clear drives, so a refusal here
+    // comes from the drive-path check itself, not from the role or login gate.
+    const fd = await asStation(P, 'frontdesk');
+    const co = await asStation(P, 'checkout');
+    const goodRead = err(await fd.call('drive:read', 'vdrive:1'));
     const evil = [];
     for (const ref of ['/etc', '../master', 'vdrive:0', 'vdrive:99', 'vdrive:1/../../master', { a: 1 }]) {
-      evil.push(JSON.parse((await call(P, 'drive:read', ref)).text).r.error);
+      evil.push(err(await fd.call('drive:read', ref)));
     }
-    const clr = JSON.parse((await call(P, 'drive:clear', path.join(data, 'master'))).text).r.error;
-    record('B6', 'drive access is limited to the virtual drives (forged paths refused)',
-      evil.every((e) => e === 'forbidden') && clr === 'forbidden', JSON.stringify(evil) + ' clear=' + clr);
+    const clr = err(await co.call('drive:clear', path.join(data, 'master')));
+    const wr = err(await fd.call('drive:write', { drivePath: path.join(data, 'master'), patient: { patient_number: 1 } }));
+    record('B6', 'drive access is limited to the virtual drives (forged paths refused, even for permitted roles)',
+      goodRead === 'ok' && evil.every((e) => e === 'forbidden') && clr === 'forbidden' && wr === 'forbidden',
+      `vdrive:1=${goodRead} forged=${JSON.stringify(evil)} clear=${clr} write=${wr}`);
 
     const form = await req(P, '/api/auth:logout', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'p=1' });
     const xorigin = await req(P, '/api/db:count', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://evil.example' }, body: '{}' });
@@ -202,13 +238,90 @@ async function partB() {
     const ctor = (await call(P, 'constructor')).status;
     record('B9', 'unknown / prototype channel names are refused', proto === 'unknown_channel' && ctor === 404, `__proto__=${proto} constructor=${ctor}`);
 
-    const info = await call(P, 'app:info');
-    const st = await call(P, 'shell:exportsDir');
-    record('B10', 'server folder paths never appear in replies', !info.text.includes(data) && !st.text.includes(data), info.text.slice(0, 120));
+    const info = await fd.call('app:info');
+    const st = await fd.call('shell:exportsDir');
+    const rd = await fd.call('drive:read', 'vdrive:1');
+    record('B10', 'server folder paths never appear in replies',
+      st.r && st.r.ok && rd.r && rd.r.ok && ![info, st, rd].some((x) => x.text.includes(data)),
+      `exportsDir=${st.r && st.r.data} driveFile=${rd.r && rd.r.file}`);
 
     const head = await req(P, '/src/renderer/index.html');
     record('B11', 'pages are kept out of search engines', head.headers.get('x-robots-tag') === 'noindex, nofollow');
+
+    // B12 — the site password alone is not enough: patient data needs a station sign-in.
+    const anon = await asStation(P, null);
+    const anonTries = [['db:search', ''], ['db:getPatient', 'x'], ['db:count'], ['db:listNV'], ['drive:list'],
+      ['drive:read', 'vdrive:1'], ['drive:write', { drivePath: 'vdrive:3', patient: {} }], ['drive:clear', 'vdrive:1'],
+      ['report:stats', {}], ['db:savePatient', { id: 'x' }], ['db:createPatient', { first_name: 'x' }]];
+    const anonRes = [];
+    for (const [c, p] of anonTries) anonRes.push(err(await anon.call(c, p)));
+    record('B12', 'without a station sign-in, no patient or drive request is answered',
+      anonRes.every((e) => e === 'forbidden'), anonTries.map((t, i) => `${t[0]}=${anonRes[i]}`).join(' '));
+
+    // B13 — a station can do only what its own screens do.
+    const doc = await asStation(P, 'doctor');
+    const docRead = err(await doc.call('drive:read', 'vdrive:1'));
+    const docDenied = [['db:search', ''], ['db:getPatient', 'x'], ['db:createPatient', { first_name: 'x' }],
+      ['db:savePatient', { id: 'x' }], ['db:uploadPatient', { id: 'x' }], ['drive:clear', 'vdrive:1'],
+      ['report:stats', {}], ['db:count'], ['report:exportMaster', { format: 'json' }]];
+    const docRes = [];
+    for (const [c, p] of docDenied) docRes.push(err(await doc.call(c, p)));
+    record('B13', 'role separation: the dentist reads drives but cannot touch the ledger, uploads, drive clearing or reports',
+      docRead === 'ok' && docRes.every((e) => e === 'forbidden'), `read=${docRead} ` + docDenied.map((t, i) => `${t[0]}=${docRes[i]}`).join(' '));
+
+    const coWrite = err(await co.call('drive:write', { drivePath: 'vdrive:3', patient: { patient_number: 5 } }));
+    const coClear = err(await co.call('drive:clear', 'vdrive:3'));
+    record('B14', 'role separation: checkout clears drives but cannot write to them', coWrite === 'forbidden' && coClear === 'ok',
+      `write=${coWrite} clear=${coClear}`);
+
+    // B15 — an export can be downloaded only by the browser that made it.
+    const adminA = await asStation(P, 'admin');
+    const adminB = await asStation(P, 'admin');
+    const ex = await adminA.call('report:exportMaster', { format: 'json' });
+    const exName = ex.r && ex.r.ok ? String(ex.r.data.file).split('/').pop() : '';
+    const own = await adminA.download(exName);
+    const other = await adminB.download(exName);
+    const anonDl = await (await asStation(P, null)).download(exName);
+    record('B15', 'exports download only to the browser that made them (others get 404, even another admin)',
+      !!exName && own.status === 200 && /"patients"/.test(own.text) && other.status === 404 && anonDl.status === 404,
+      `${exName}: maker=${own.status} otherAdmin=${other.status} signedOut=${anonDl.status}`);
+
+    // B17 — wrong site passwords are answered slowly; the right one is not.
+    let t0 = Date.now();
+    await fetch(`http://127.0.0.1:${P}/src/renderer/index.html`, { headers: { Authorization: 'Basic ' + Buffer.from('gdr:wrong-guess').toString('base64') } });
+    const slow = Date.now() - t0;
+    t0 = Date.now();
+    await req(P, '/src/renderer/index.html');
+    const fast = Date.now() - t0;
+    record('B17', 'each wrong site-password guess is delayed (~1 s); the right password is not', slow >= 900 && fast < 500,
+      `wrong=${slow}ms right=${fast}ms`);
+
+    // B18 — only the master-DB import may send a large body.
+    const big = JSON.stringify({ p: 'x'.repeat(6 * 1024 * 1024) });
+    const post = async (channel, cookieFrom) => {
+      try {
+        const r = await fetch(`http://127.0.0.1:${P}/api/${channel}`, { method: 'POST', headers: { Authorization: AUTH, 'Content-Type': 'application/json' }, body: big });
+        await r.text();
+        return r.status;
+      } catch (_) { return 'connection-closed'; }
+    };
+    const smallChan = await post('drive:read');
+    const importChan = await post('db:importMaster');
+    record('B18', '6 MB request refused on ordinary channels, accepted for the master-DB import',
+      (smallChan === 413 || smallChan === 'connection-closed') && importChan === 200, `drive:read=${smallChan} db:importMaster=${importChan}`);
   } finally { await stopServer(srv); }
+
+  // B16 — too-short site password refused at boot.
+  const shortPw = await new Promise((resolve) => {
+    const env = Object.assign({}, process.env, { GDR_WEB_PASSWORD: 'short-pw', GDR_WEB_INSECURE_NO_AUTH: '', PORT: '0',
+      GDR_DATA_DIR: fs.mkdtempSync(path.join(os.tmpdir(), 'gdr-webtest-short-')) });
+    const c = spawn(process.execPath, ['src/server/server.js'], { cwd: ROOT, env });
+    let out = ''; c.stderr.on('data', (d) => { out += d; });
+    c.on('exit', (code) => resolve({ code, out }));
+    setTimeout(() => { c.kill(); resolve({ code: 'still running', out }); }, 8000);
+  });
+  record('B16', 'server refuses a site password shorter than 12 characters', shortPw.code === 1 && /at least 12/.test(shortPw.out),
+    `exit=${shortPw.code}`);
 }
 
 // ---------------------------------------------------------------------------

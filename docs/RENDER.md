@@ -24,7 +24,10 @@ that the two can't drift apart.
 | Signing in | Station login | **Site password first** (once per browser), then the same station login |
 
 Several testers can work at once — each browser has its own login, so the
-"doctor" and the "front desk" never overwrite each other.
+"doctor" and the "front desk" never overwrite each other. Each station can only
+do what its own screens do: a tester signed in as the dentist cannot search the
+patient ledger, upload a visit or pull a report, even by calling the server
+directly.
 
 ## One-time setup (about 5 minutes)
 
@@ -32,8 +35,10 @@ Several testers can work at once — each browser has its own login, so the
 2. In Render: **New → Blueprint**, connect GitHub, and choose the repository
    **oofski/Global-Dental-Relief-**.
 3. Render reads `render.yaml` and asks for **`GDR_WEB_PASSWORD`**. Choose the
-   site password your testers will use. Type it only into Render — never into a
-   chat, an email thread, or the repository.
+   site password your testers will use — **at least 12 characters** (the site
+   won't start with a shorter one). A few random words works well, e.g.
+   `harbor-violet-pencil-57`. Type it only into Render — never into a chat, an
+   email thread, or the repository.
 4. Click **Apply**. The first deploy takes a few minutes. Your site address will
    look like `https://gdr-clinic-test.onrender.com`.
 
@@ -54,6 +59,23 @@ already on drives — **#146 on virtual drive 1** (everything authorized) and
 **#145 on virtual drive 2** (parent declined fillings and extractions, so the
 dentist and hygienist see the red consent warning).
 
+## How it is protected — and what that means for you
+
+**The site password is the lock on the door.** Nothing on the site — not even
+the sign-in screen — is reachable without it. Every wrong guess is answered only
+after a delay, and the server refuses to start without a password of 12+ characters.
+
+**The station logins are workflow, not security, on this site.** Their default
+password `welcome123` is written in this public repository, so anyone who gets
+past the site password can sign in as any station, including `admin`. That's
+fine for a team of trusted testers. If you want station roles to actually keep
+testers apart, change the station passwords in **Settings → Accounts** — and note
+that on the free plan they reset on every deploy (see *Keeping test data*).
+
+Also: an export can only be downloaded by the browser that made it, the server
+only offers its own virtual drives (no other folder can be reached), and pages
+are marked so search engines don't index them.
+
 ## Pushing live updates
 
 Push to the branch `claude/confident-mayer-x9cxvu` and Render redeploys on its
@@ -68,7 +90,8 @@ copy (`src/server`, `src/web`, `render.yaml`) skip the Windows build entirely.
 
 ## Keeping test data
 
-On Render's **free** plan the site's data is erased on every deploy and restart,
+On Render's **free** plan the site's data — patients *and* any changed station
+passwords — is erased on every deploy and restart,
 and the site goes to sleep after about 15 minutes with no visitors (the next
 visit takes about a minute to wake it). Each wake-up starts again from the demo
 clinic. That suits quick checks; it's frustrating for a multi-day test.
@@ -89,24 +112,22 @@ Then open http://localhost:10000 (username `gdr`).
 
 ## Checks
 
-`npm run web-test` proves the web copy works: the browser and desktop expose the
-identical interface; the site password, file-access limits and cross-site
-protections hold; and a full clinic visit runs in a real browser — front desk →
-dentist (consent warning) → hygienist → checkout upload → report download →
-master DB import — with two testers signed in as different roles at once.
-It needs Playwright with Chromium installed.
+`npm run web-test` (31 checks) proves the web copy works: the browser and
+desktop expose the identical interface; the site password, station sign-in and
+role separation, export ownership, file-access limits and cross-site protections
+all hold; and a full clinic visit runs in a real browser — front desk → dentist
+(consent warning) → hygienist → checkout upload → report download → master DB
+import — with two testers signed in as different roles at once. It needs
+Playwright with Chromium installed.
 
 ## Settings reference
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `GDR_WEB_PASSWORD` | — (required) | Site password. The server refuses to start without it. |
+| `GDR_WEB_PASSWORD` | — (required) | Site password, 12+ characters. The server refuses to start otherwise. |
 | `GDR_WEB_USER` | `gdr` | Site username. |
 | `GDR_DATA_DIR` | temporary folder | Where the database and virtual drives live. Point at a disk to keep data. |
 | `GDR_SEED_DEMO` | off | `1` loads the invented demo clinic when the database is empty. |
 | `GDR_VIRTUAL_DRIVES` | `8` | Number of virtual drives (1–50). |
 | `GDR_WEB_BANNER` | test-data warning | Text of the purple bar. |
 | `PORT` | `10000` | Set by Render automatically. |
-
-Repeated wrong site passwords from one address are blocked for 15 minutes. Pages
-are marked so search engines don't index them.

@@ -39,12 +39,25 @@ function publicConfig() {
   };
 }
 
-// Roles that manage the patient ledger (front desk, checkout, admin).
-const RECORDS_ROLES = ['check_in', 'checkout', 'admin'];
+// Who may call what. Each set is exactly the roles whose screens make that
+// request (mapped from every window.api call in src/renderer), so a role can
+// do over the wire only what its own station does in the UI. Before sign-in,
+// only config, version info, the update banner and login itself are open.
+//
+// On the desktop the renderer is trusted, so these mostly harden against a
+// compromised page. On the web build they are what stops someone who has only
+// the site password — or is signed in as one station — from reading or
+// rewriting the patient ledger directly.
+const RECORDS_ROLES = ['check_in', 'checkout', 'admin'];               // the patient ledger
+const CHECKOUT_ROLES = ['checkout', 'admin'];                          // upload, clear drive, NV, reports
+const DRIVE_WRITE_ROLES = ['check_in', 'dentist', 'cleaning', 'fluoride']; // stations that save to a drive
+const SIGNED_IN = 'signed_in';                                         // any station
 
 function createHandlers(platform) {
   const isAdmin = (ctx) => !!(ctx.session && ctx.session.manage_users);
   const hasRecords = (ctx) => !!(ctx.session && RECORDS_ROLES.includes(ctx.session.role));
+  const allowed = (ctx, roles) => !!ctx.session && (roles === SIGNED_IN || roles.includes(ctx.session.role));
+  const gate = (roles, fn) => (p, ctx) => (allowed(ctx, roles) ? fn(p, ctx) : fail('forbidden'));
   // A drive reference arrives from the client. resolveDrive maps it to a real
   // folder, or returns null to refuse it. The desktop passes real USB paths
   // straight through; the web build hands out opaque ids ('vdrive:3') and maps
@@ -97,19 +110,19 @@ function createHandlers(platform) {
     'update:openReleases': () => platform.updater.openReleases(),
 
     // --- Master DB ---
-    'db:nextNumber': () => ok(db.peekNextNumber()),
-    'db:createPatient': (fields) => {
+    'db:nextNumber': gate(RECORDS_ROLES, () => ok(db.peekNextNumber())),
+    'db:createPatient': gate(RECORDS_ROLES, (fields) => {
       try { return ok(db.createPatient(fields)); }
       catch (e) { return fail('create_failed', String(e.message || e)); }
-    },
-    'db:savePatient': (patient) => {
+    }),
+    'db:savePatient': gate(RECORDS_ROLES, (patient) => {
       try { return ok(db.savePatient(patient)); }
       catch (e) { return fail('save_failed', String(e.message || e)); }
-    },
-    'db:uploadPatient': (patient) => {
+    }),
+    'db:uploadPatient': gate(CHECKOUT_ROLES, (patient) => {
       try { return ok(db.uploadPatient(patient)); }
       catch (e) { return fail('upload_failed', String(e.message || e)); }
-    },
+    }),
     // Stations merge their work into the master record (no checkout stamp) so it
     // accumulates + shows in reports/checkout immediately. Any logged-in role.
     'db:mergeFromDrive': (patient, ctx) => {
@@ -117,16 +130,16 @@ function createHandlers(platform) {
       try { return ok(db.mergeFromDrive(patient)); }
       catch (e) { return fail('merge_failed', String(e.message || e)); }
     },
-    'db:getPatient': (id) => ok(db.getPatient(id)),
-    'db:getPatientByNumber': (num) => ok(db.getPatientByNumber(num)),
-    'db:search': (q) => ok(db.searchPatients(q)),
-    'db:listNV': () => ok(db.listNV()),
-    'db:listDrives': () => ok(db.listDrives()),
-    'db:logDrive': (p) => {
+    'db:getPatient': gate(RECORDS_ROLES, (id) => ok(db.getPatient(id))),
+    'db:getPatientByNumber': gate(RECORDS_ROLES, (num) => ok(db.getPatientByNumber(num))),
+    'db:search': gate(RECORDS_ROLES, (q) => ok(db.searchPatients(q))),
+    'db:listNV': gate(CHECKOUT_ROLES, () => ok(db.listNV())),
+    'db:listDrives': gate(RECORDS_ROLES, () => ok(db.listDrives())),
+    'db:logDrive': gate(RECORDS_ROLES, (p) => {
       const { num, status, patientId } = p || {};
       return ok(db.logDrive(num, status, patientId));
-    },
-    'db:count': () => ok(db.allPatients().length),
+    }),
+    'db:count': gate(RECORDS_ROLES, () => ok(db.allPatients().length)),
     // Clear the patient ledger (front desk / checkout / admin). Auto-backs up first.
     'db:clearAll': (opts, ctx) => {
       if (!hasRecords(ctx)) return fail('forbidden');
@@ -154,31 +167,31 @@ function createHandlers(platform) {
     },
 
     // --- Flash drive ---
-    'drive:list': async () => ok(await platform.listDrives()),
-    'drive:status': (ref) => {
+    'drive:list': gate(SIGNED_IN, async () => ok(await platform.listDrives())),
+    'drive:status': gate(SIGNED_IN, (ref) => {
       const d = resolveDrive(ref);
       return d ? ok(drive.driveStatus(d.path)) : fail('forbidden');
-    },
-    'drive:read': (ref) => {
+    }),
+    'drive:read': gate(SIGNED_IN, (ref) => {
       const d = resolveDrive(ref);
       return d ? drive.readPatient(d.path) : fail('forbidden');
-    },
-    'drive:write': (p) => {
+    }),
+    'drive:write': gate(DRIVE_WRITE_ROLES, (p) => {
       const { drivePath, patient } = p || {};
       const d = resolveDrive(drivePath);
       if (!d) return fail('forbidden');
       if (platform.onDriveWrite) platform.onDriveWrite(patient);
       return drive.writePatient(d.path, patient);
-    },
-    'drive:clear': (ref) => {
+    }),
+    'drive:clear': gate(CHECKOUT_ROLES, (ref) => {
       const d = resolveDrive(ref);
       return d ? drive.clearDrive(d.path) : fail('forbidden');
-    },
-    'drive:pickFolder': async () => ok(await platform.pickFolder()),
+    }),
+    'drive:pickFolder': gate(SIGNED_IN, async () => ok(await platform.pickFolder())),
 
     // --- Reports / export ---
-    'report:stats': (range) => ok(reports.computeStats(range || {})),
-    'report:exportSummary': async (p) => {
+    'report:stats': gate(CHECKOUT_ROLES, (range) => ok(reports.computeStats(range || {}))),
+    'report:exportSummary': gate(CHECKOUT_ROLES, async (p) => {
       const { format, range } = p || {};
       try {
         const stats = reports.computeStats(range || {});
@@ -192,7 +205,7 @@ function createHandlers(platform) {
         }
         return ok({ file, stats });
       } catch (e) { return fail('export_failed', String(e.message || e)); }
-    },
+    }),
     'report:exportMaster': (p, ctx) => {
       const { format } = p || {};
       if (!hasRecords(ctx)) return fail('forbidden');
@@ -203,10 +216,10 @@ function createHandlers(platform) {
     },
 
     // --- Shell helpers ---
-    'shell:openPath': (p) => { platform.openPath(p); return ok(true); },
-    'shell:exportsDir': () => ok(paths.exports()),
+    'shell:openPath': gate(SIGNED_IN, (p) => { platform.openPath(p); return ok(true); }),
+    'shell:exportsDir': gate(SIGNED_IN, () => ok(paths.exports())),
     'app:info': () => ok(platform.appInfo())
   };
 }
 
-module.exports = { createHandlers, publicConfig, ok, fail, RECORDS_ROLES };
+module.exports = { createHandlers, publicConfig, ok, fail, RECORDS_ROLES, CHECKOUT_ROLES, DRIVE_WRITE_ROLES };

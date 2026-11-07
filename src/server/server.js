@@ -11,13 +11,16 @@
  *             src/server/platform  virtual drives instead of USB, no dialogs
  *
  * Security (this is reachable from the internet):
- *  - Every request needs the site password (HTTP Basic auth) — GDR_WEB_PASSWORD.
- *    The server refuses to start without one. Repeated wrong guesses from one
- *    address are throttled.
+ *  - Every request needs the site password (HTTP Basic auth) — GDR_WEB_PASSWORD,
+ *    at least 12 characters, or the server refuses to start. Each wrong guess is
+ *    answered only after a delay, and repeated guesses from one address are
+ *    throttled.
+ *  - The app's own sign-in and roles are then enforced on every request (see
+ *    src/main/api.js): a station can only do what its screens do.
  *  - Each browser gets its own login session (cookie), so testers at different
  *    stations never share or overwrite each other's login.
  *  - Only the UI folders are served; drive access is limited to the server's own
- *    virtual drives; downloads only from the exports folder.
+ *    virtual drives; a browser can download only the exports it made itself.
  *  - Never put real patient information on a test server. A banner says so on
  *    every screen.
  *
@@ -58,12 +61,23 @@ const SITE_PASS = process.env.GDR_WEB_PASSWORD || '';
 const NO_AUTH = process.env.GDR_WEB_INSECURE_NO_AUTH === '1';
 const BANNER = process.env.GDR_WEB_BANNER
   || 'TEST ENVIRONMENT — demo data only. Never enter real patient information.';
-const MAX_BODY = 30 * 1024 * 1024; // a large clinic's master DB import fits comfortably
+// Request size caps: only the master-DB import needs to be large.
+const MAX_BODY = 5 * 1024 * 1024;
+const MAX_IMPORT_BODY = 30 * 1024 * 1024; // a large clinic's master DB fits comfortably
+const MIN_PASSWORD = 12;
 const DATA_DIR = paths.base();
 
 if (!SITE_PASS && !NO_AUTH) {
   console.error('[web] Refusing to start: set GDR_WEB_PASSWORD (the site password testers will use).');
   console.error('[web] For a private local run only, GDR_WEB_INSECURE_NO_AUTH=1 skips it.');
+  process.exit(1);
+}
+// The site password is the real barrier between the internet and this site, so
+// it must be long enough that guessing it is hopeless — the per-address throttle
+// below can be dodged by a client that forges X-Forwarded-For.
+if (!NO_AUTH && SITE_PASS.length < MIN_PASSWORD) {
+  console.error(`[web] Refusing to start: GDR_WEB_PASSWORD must be at least ${MIN_PASSWORD} characters.`);
+  console.error('[web] A few random words works well, e.g. "harbor-violet-pencil-57".');
   process.exit(1);
 }
 
@@ -74,17 +88,26 @@ const handlers = api.createHandlers(platform);
 // Sessions: one auth context per browser, keyed by an unguessable cookie.
 // ---------------------------------------------------------------------------
 const SESSION_IDLE_MS = 12 * 60 * 60 * 1000;
-const sessions = new Map(); // sid -> { ctx: { session }, seen }
+const MAX_SESSIONS = 5000;  // far above any test team; bounds memory if a client mints them
+const sessions = new Map(); // sid -> { ctx: { session, downloads }, seen }
+
+// The browser's existing context, or null — never creates one.
+function findSession(req) {
+  const sid = parseCookies(req).gdr_sid;
+  const s = sid && sessions.get(sid);
+  if (!s) return null;
+  s.seen = Date.now();
+  return s.ctx;
+}
 
 function getSession(req, res) {
-  const sid = parseCookies(req).gdr_sid;
-  if (sid && sessions.has(sid)) {
-    const s = sessions.get(sid);
-    s.seen = Date.now();
-    return s.ctx;
-  }
+  const existing = findSession(req);
+  if (existing) return existing;
+  // Map iteration is insertion order, so the first key is the oldest session.
+  while (sessions.size >= MAX_SESSIONS) sessions.delete(sessions.keys().next().value);
   const fresh = crypto.randomBytes(32).toString('hex');
-  const s = { ctx: { session: null }, seen: Date.now() };
+  // downloads: export files this browser produced — the only ones it may fetch.
+  const s = { ctx: { session: null, downloads: new Set() }, seen: Date.now() };
   sessions.set(fresh, s);
   const secure = (req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https';
   res.setHeader('Set-Cookie', `gdr_sid=${fresh}; Path=/; HttpOnly; SameSite=Strict${secure ? '; Secure' : ''}`);
@@ -110,6 +133,9 @@ function parseCookies(req) {
 // ---------------------------------------------------------------------------
 const FAIL_WINDOW_MS = 15 * 60 * 1000;
 const FAIL_LIMIT = 20;
+// Every wrong guess waits before being answered. Unlike a lockout this cannot be
+// turned against real testers, and it caps how fast any one connection can guess.
+const WRONG_PASSWORD_DELAY_MS = 1000;
 const failures = new Map(); // ip -> { count, since }
 
 // Best effort. Behind Render's proxy the client address arrives in
@@ -147,10 +173,17 @@ function checkSitePassword(req, res) {
     const rec = f && Date.now() - f.since < FAIL_WINDOW_MS ? f : { count: 0, since: Date.now() };
     rec.count++;
     failures.set(ip, rec);
+    setTimeout(() => challenge(res), WRONG_PASSWORD_DELAY_MS);
+    return false;
   }
+  // No credentials yet: the browser's first request. Ask at once.
+  challenge(res);
+  return false;
+}
+
+function challenge(res) {
   res.setHeader('WWW-Authenticate', 'Basic realm="GDR Clinic test", charset="UTF-8"');
   send(res, 401, 'Authentication required.', 'text/plain; charset=utf-8');
-  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -242,13 +275,15 @@ function serveBoot(res) {
 // Server paths are an implementation detail; keep them out of replies.
 function scrub(json) { return json.split(DATA_DIR).join('~'); }
 
-function readBody(req) {
+function readBody(req, limit) {
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks = [];
+    let over = false;
     req.on('data', (c) => {
+      if (over) return;
       size += c.length;
-      if (size > MAX_BODY) { reject(Object.assign(new Error('too_large'), { status: 413 })); req.destroy(); return; }
+      if (size > limit) { over = true; chunks.length = 0; reject(Object.assign(new Error('too_large'), { status: 413 })); return; }
       chunks.push(c);
     });
     req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
@@ -270,12 +305,22 @@ async function serveApi(req, res, channel) {
   if (!Object.prototype.hasOwnProperty.call(handlers, channel)) {
     return send(res, 404, JSON.stringify({ r: { ok: false, error: 'unknown_channel' } }), MIME['.json']);
   }
+  const limit = channel === 'db:importMaster' ? MAX_IMPORT_BODY : MAX_BODY;
   let body;
-  try { body = JSON.parse((await readBody(req)) || '{}'); }
-  catch (e) { return send(res, e.status || 400, 'Bad request', 'text/plain'); }
+  try { body = JSON.parse((await readBody(req, limit)) || '{}'); }
+  catch (e) {
+    if (e.status === 413) {
+      // Answer, then drop the connection rather than read the rest of the body.
+      res.setHeader('Connection', 'close');
+      res.on('finish', () => req.destroy());
+      return send(res, 413, 'Request too large', 'text/plain');
+    }
+    return send(res, 400, 'Bad request', 'text/plain');
+  }
   const ctx = getSession(req, res);
   try {
     const result = await handlers[channel](body ? body.p : undefined, ctx);
+    rememberExport(channel, result, ctx);
     res.setHeader('Cache-Control', 'no-store');
     send(res, 200, scrub(JSON.stringify({ r: result === undefined ? null : result })), MIME['.json']);
   } catch (e) {
@@ -284,8 +329,25 @@ async function serveApi(req, res, channel) {
   }
 }
 
+// Channels that write a file to the exports folder, and where its path is.
+const EXPORT_FILE = {
+  'report:exportSummary': (d) => d.file,
+  'report:exportMaster': (d) => d.file,
+  'db:clearAll': (d) => d.backupFile
+};
+function rememberExport(channel, result, ctx) {
+  const pick = EXPORT_FILE[channel];
+  const file = pick && result && result.ok && result.data && pick(result.data);
+  if (file) ctx.downloads.add(path.basename(file));
+}
+
+// A browser may only download files IT exported. Export permissions are checked
+// when the file is made (api.js); without this, anyone with the site password
+// could fetch a master-DB export by guessing its timestamped name.
 function serveDownload(req, res, url) {
+  const ctx = findSession(req);
   const name = url.searchParams.get('f') || '';
+  if (!ctx || !ctx.session || !ctx.downloads.has(name)) return send(res, 404, 'Not found', 'text/plain');
   // A bare file name from the exports folder — nothing else.
   if (!name || name !== path.basename(name) || name.startsWith('.')) return send(res, 400, 'Bad file name', 'text/plain');
   const file = underRoot(paths.exports(), name);
