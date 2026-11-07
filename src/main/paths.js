@@ -15,6 +15,9 @@ let app = null;
 try { app = require('electron').app; } catch (_) { /* running outside electron (smoke test) */ }
 
 function baseDir() {
+  // The web build sets this to its own data folder (a persistent disk on
+  // Render). The desktop app never sets it, so it keeps using userData.
+  if (process.env.GDR_DATA_DIR) return ensure(path.resolve(process.env.GDR_DATA_DIR));
   if (app) return app.getPath('userData');
   // Smoke-test / headless fallback
   const dir = path.join(os.tmpdir(), 'gdr-clinic-data');

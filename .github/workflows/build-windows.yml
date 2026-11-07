@@ -12,6 +12,11 @@ on:
       - "**.md"
       - "docs/**"
       - "release/**"
+      # Web test build only (Render) — nothing here ships in the desktop app.
+      - "src/server/**"
+      - "src/web/**"
+      - "render.yaml"
+      - "scripts/web-test.js"
   workflow_dispatch:
 
 permissions:
@@ -36,16 +41,42 @@ jobs:
       - name: Run smoke tests
         run: npm run smoke
 
+      # Publish ONLY when package.json carries a version that has not been
+      # released yet. electron-builder would otherwise reuse the existing release
+      # and overwrite its installer, so an ordinary push (e.g. a web-test change
+      # deployed to Render) would silently replace what clinics download, under
+      # an already-announced version number. Bump the version to ship a release.
+      - name: Is this a new version?
+        id: ver
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "v$VERSION is already released - building as a check only, NOT republishing over it."
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            echo "v$VERSION is new - will build and publish."
+          fi
+
       # Build + publish to a GitHub Release (v<version>) so the auto-updater can
-      # find latest.yml. electron-builder reuses an existing release for the same
-      # version (assets are overwritten); bump the version for a real update.
+      # find latest.yml.
       - name: Build & publish installer
+        if: steps.ver.outputs.publish == 'true'
         run: npx electron-builder --win --x64 --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Build installer (check only - version already released)
+        if: steps.ver.outputs.publish != 'true'
+        run: npx electron-builder --win --x64 --publish never
+
       # Per-version release notes from CHANGELOG.md (shown on the GitHub Release).
       - name: Set release notes from CHANGELOG
+        if: steps.ver.outputs.publish == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

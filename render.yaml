@@ -1,0 +1,55 @@
+# Render Blueprint — GDR Clinic WEB TEST BUILD.
+#
+# The same application as the desktop app, served to a browser so testers can
+# use it over the internet. Every push to the branch below redeploys it.
+# Setup and day-to-day use: docs/RENDER.md.
+#
+# Render dashboard -> New -> Blueprint -> pick this repository. Render reads this
+# file and asks you for the site password (GDR_WEB_PASSWORD) — choose one there;
+# it never goes in this file or in the repository.
+#
+# TEST DATA ONLY. Never enter real patient information on this site.
+
+services:
+  - type: web
+    name: gdr-clinic-test
+    runtime: node
+    # Free: no cost, but the data is erased on every deploy/restart and the
+    # site sleeps after ~15 minutes idle (first visit then takes ~1 minute).
+    # For data that survives redeploys, see "Keeping test data" in docs/RENDER.md.
+    plan: free
+    branch: claude/confident-mayer-x9cxvu
+    autoDeploy: true
+    # Production dependencies only — skips Electron (~100 MB) and the installer
+    # builder, which the web build never uses.
+    buildCommand: npm ci --omit=dev
+    startCommand: node src/server/server.js
+    # Render only switches traffic to a new deploy once this answers, so a
+    # broken push leaves the previous working version online.
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      # The site password every tester types once per browser. Render prompts
+      # for it when the Blueprint is created; the server will not start without it.
+      - key: GDR_WEB_PASSWORD
+        sync: false
+      - key: GDR_WEB_USER
+        value: gdr
+      # Load the invented demo clinic (61 patients + 2 on virtual drives) when
+      # the database is empty, so testers always have something to work with.
+      - key: GDR_SEED_DEMO
+        value: "1"
+      # Numbered stand-ins for the clinic's USB sticks.
+      - key: GDR_VIRTUAL_DRIVES
+        value: "8"
+
+    # --- Keeping test data across deploys (paid; uncomment to use) ----------
+    # plan: starter
+    # disk:
+    #   name: gdr-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
+    # ...and add to envVars above:
+    #   - key: GDR_DATA_DIR
+    #     value: /var/data

@@ -16,6 +16,8 @@
     "v131": "node scripts/v131-test.js",
     "v132": "node scripts/v132-test.js",
     "v133": "node scripts/v133-test.js",
+    "web": "node src/server/server.js",
+    "web-test": "node scripts/web-test.js",
     "e2e": "node scripts/e2e-test.js",
     "e2e:seed": "node scripts/e2e-seed.js",
     "dist": "electron-builder --win --x64",

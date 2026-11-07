@@ -9,13 +9,15 @@ const drive = require('./drive');
 const reports = require('./reports');
 const paths = require('./paths');
 const users = require('./users');
+const api = require('./api');
 
 const isDev = process.argv.includes('--dev');
 let mainWindow = null;
 
-// Simple in-process auth session so privileged IPC (user management) can be
-// guarded server-side, not just hidden in the UI.
-let session = null;
+// The desktop has one user at a time, so one auth context. Privileged handlers
+// (user management) check it server-side, not just by hiding UI. The web build
+// keeps one of these per browser instead — see src/server/server.js.
+const ipcCtx = { session: null };
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -691,8 +693,9 @@ app.on('window-all-closed', () => {
 });
 
 // ---- IPC contract -------------------------------------------------------
-function ok(data) { return { ok: true, data }; }
-function fail(error, detail) { return { ok: false, error, detail }; }
+// Every handler lives in api.js, shared with the web build. This file only
+// supplies the desktop's half: the single login session, and the capabilities
+// that need Electron (native dialogs, the auto-updater, shell).
 
 // Localized strings for native dialogs (titles shown by the OS file picker).
 function uiText(key) {
@@ -704,185 +707,68 @@ function uiText(key) {
   return (M[lang] || M.en)[key];
 }
 
-// Non-secret config exposed to the renderer (no PINs).
-function publicConfig() {
-  const c = config.load();
-  return {
-    clinic_name: c.clinic_name,
-    deployment_label: c.deployment_label,
-    patient_number_start: c.patient_number_start,
-    ui_language: c.ui_language || 'en',
-    report_language: c.report_language || 'es',
-    consent_language: c.consent_language || 'es'
-  };
-}
-
-function requireAdmin() { return !!(session && session.manage_users); }
-// Roles that manage the patient ledger (front desk, checkout, admin).
-function requireRecordsAccess() { return !!(session && ['check_in', 'checkout', 'admin'].includes(session.role)); }
-
-function registerIpc() {
-  // --- Auth / session ---
-  ipcMain.handle('auth:login', (_e, { username, password }) => {
-    const res = users.authenticate(username, password);
-    if (res.ok) session = res.user;
-    return res;
-  });
-  ipcMain.handle('auth:logout', () => { session = null; return ok(true); });
-
-  // --- User accounts (admin portal) ---
-  ipcMain.handle('users:roles', () => ok(users.roles()));
-  ipcMain.handle('users:list', () => (requireAdmin() ? ok(users.list()) : fail('forbidden')));
-  ipcMain.handle('users:create', (_e, payload) => (requireAdmin() ? users.create(payload || {}) : fail('forbidden')));
-  ipcMain.handle('users:update', (_e, { id, changes }) => (requireAdmin() ? users.update(id, changes || {}) : fail('forbidden')));
-  ipcMain.handle('users:changePassword', (_e, { id, password }) => (requireAdmin() ? users.changePassword(id, password) : fail('forbidden')));
-  ipcMain.handle('users:remove', (_e, id) => (requireAdmin() ? users.remove(id) : fail('forbidden')));
-
-  // --- Config ---
-  ipcMain.handle('config:get', () => publicConfig());
-  // Synchronous channel: the preload reads this during page load so the renderer
-  // can pick its UI language before any module evaluates (no flash, no async).
-  ipcMain.on('config:get-sync', (e) => { e.returnValue = publicConfig(); });
-  ipcMain.handle('config:save', (_e, patch) => {
-    if (!requireAdmin()) return fail('forbidden');
-    try {
-      const c = config.load();
-      const allowed = ['clinic_name', 'deployment_label', 'patient_number_start', 'ui_language', 'report_language', 'consent_language'];
-      for (const k of allowed) { if (patch && patch[k] != null && patch[k] !== '') c[k] = patch[k]; }
-      if (patch && patch.deployment_label != null) c.deployment_label = patch.deployment_label; // allow clearing
-      config.save(c);
-      return ok(publicConfig());
-    } catch (e) { return fail('save_failed', String(e.message || e)); }
-  });
-
-  // --- Software updates (admin Settings) ---
-  ipcMain.handle('update:available', () => ok(updaterAvailable()));
-  ipcMain.handle('update:state', () => ok(updateState));
-  ipcMain.handle('update:check', () => {
-    if (!updaterAvailable()) return fail('updates_unavailable');
-    const u = getUpdater();
-    if (!u) return fail('updates_unavailable');
-    pushUpdateStatus({ status: 'checking', error: null });
-    u.checkForUpdates().catch((err) => pushUpdateStatus({ status: 'error', error: String(err && err.message || err) }));
-    return ok(true);
-  });
-  ipcMain.handle('update:install', () => {
-    if (!updaterAvailable() || !autoUpdater) return fail('updates_unavailable');
-    updateLog('INFO', 'user requested install & restart');
-    // isSilent=false (show the NSIS step), isForceRunAfter=true (relaunch the app).
-    setImmediate(() => { try { autoUpdater.quitAndInstall(false, true); } catch (e) { updateLog('ERROR', 'quitAndInstall ' + e); } });
-    return ok(true);
-  });
-  // Open the GitHub Releases page (used by the portable build, which can't self-update).
-  ipcMain.handle('update:openReleases', () => {
-    try { shell.openExternal(RELEASES_URL); return ok(true); } catch (e) { return fail('open_failed', String(e.message || e)); }
-  });
-
-  // --- Master DB ---
-  ipcMain.handle('db:nextNumber', () => ok(db.peekNextNumber()));
-  ipcMain.handle('db:createPatient', (_e, fields) => {
-    try { return ok(db.createPatient(fields)); }
-    catch (e) { return fail('create_failed', String(e.message || e)); }
-  });
-  ipcMain.handle('db:savePatient', (_e, patient) => {
-    try { return ok(db.savePatient(patient)); }
-    catch (e) { return fail('save_failed', String(e.message || e)); }
-  });
-  ipcMain.handle('db:uploadPatient', (_e, patient) => {
-    try { return ok(db.uploadPatient(patient)); }
-    catch (e) { return fail('upload_failed', String(e.message || e)); }
-  });
-  // Stations merge their work into the master record (no checkout stamp) so it
-  // accumulates + shows in reports/checkout immediately. Any logged-in role.
-  ipcMain.handle('db:mergeFromDrive', (_e, patient) => {
-    if (!session) return fail('forbidden');
-    try { return ok(db.mergeFromDrive(patient)); }
-    catch (e) { return fail('merge_failed', String(e.message || e)); }
-  });
-  ipcMain.handle('db:getPatient', (_e, id) => ok(db.getPatient(id)));
-  ipcMain.handle('db:getPatientByNumber', (_e, num) => ok(db.getPatientByNumber(num)));
-  ipcMain.handle('db:search', (_e, q) => ok(db.searchPatients(q)));
-  ipcMain.handle('db:listNV', () => ok(db.listNV()));
-  ipcMain.handle('db:listDrives', () => ok(db.listDrives()));
-  ipcMain.handle('db:logDrive', (_e, { num, status, patientId }) => ok(db.logDrive(num, status, patientId)));
-  ipcMain.handle('db:count', () => ok(db.allPatients().length));
-  // Clear the patient ledger (front desk / checkout / admin). Auto-backs up first.
-  ipcMain.handle('db:clearAll', (_e, opts) => {
-    if (!requireRecordsAccess()) return fail('forbidden');
-    try {
-      const before = db.allPatients().length;
-      let backupFile = null;
-      if (before > 0) { try { backupFile = reports.exportMasterJSON(); } catch (_) { /* best-effort */ } }
-      const res = db.clearAllPatients(opts || {});
-      return ok({ removed: res.removed, counter: res.counter, backupFile });
-    } catch (e) { return fail('clear_failed', String(e.message || e)); }
-  });
-
-  // --- Flash drive ---
-  ipcMain.handle('drive:list', async () => ok(await drive.listDrives()));
-  ipcMain.handle('drive:status', (_e, p) => ok(drive.driveStatus(p)));
-  ipcMain.handle('drive:read', (_e, p) => drive.readPatient(p));
-  ipcMain.handle('drive:write', (_e, { drivePath, patient }) => {
-    // TEST-ONLY diagnostic (env-gated): log what the renderer is actually asking
-    // to persist, so an E2E run can prove the in-memory edits reach the drive.
-    if (process.env.GDR_SMOKE_LAUNCH) {
-      try {
-        const vs = (patient && patient.visits) || [];
-        const lv = vs[vs.length - 1] || {};
-        console.log('[smoke] IPC drive:write last-visit items=' + ((lv.treatment_items || []).length) + ' exam=' + lv.exam_type + ' dentist=' + (lv.station_status && lv.station_status.dentist));
-      } catch (_) {}
-    }
-    return drive.writePatient(drivePath, patient);
-  });
-  ipcMain.handle('drive:clear', (_e, p) => drive.clearDrive(p));
-  ipcMain.handle('drive:pickFolder', async () => {
-    const res = await dialog.showOpenDialog(mainWindow, {
-      title: uiText('pick_folder'),
-      properties: ['openDirectory']
-    });
-    if (res.canceled || !res.filePaths.length) return ok(null);
-    return ok(res.filePaths[0]);
-  });
-
-  // --- Reports / export ---
-  ipcMain.handle('report:stats', (_e, range) => ok(reports.computeStats(range || {})));
-  ipcMain.handle('report:exportSummary', async (_e, { format, range }) => {
-    try {
-      const stats = reports.computeStats(range || {});
-      let file;
-      if (format === 'xlsx') {
-        const r = await reports.exportSummaryXLSX(stats);
-        if (r && r.error) return fail(r.error);
-        file = r;
-      } else {
-        file = reports.exportSummaryCSV(stats);
-      }
-      return ok({ file, stats });
-    } catch (e) { return fail('export_failed', String(e.message || e)); }
-  });
-  ipcMain.handle('report:exportMaster', (_e, { format }) => {
-    if (!requireRecordsAccess()) return fail('forbidden');
-    try {
-      const file = format === 'csv' ? reports.exportMasterCSV() : reports.exportMasterJSON();
-      return ok({ file });
-    } catch (e) { return fail('export_failed', String(e.message || e)); }
-  });
-  ipcMain.handle('db:importMaster', async () => {
-    if (!requireRecordsAccess()) return fail('forbidden');
+const desktopPlatform = {
+  // The desktop renderer is trusted and chooses real USB drives: pass the path
+  // through unchanged (including a missing one, exactly as before).
+  resolveDrive: (p) => ({ path: p }),
+  listDrives: () => drive.listDrives(),
+  pickFolder: async () => {
+    const res = await dialog.showOpenDialog(mainWindow, { title: uiText('pick_folder'), properties: ['openDirectory'] });
+    return (res.canceled || !res.filePaths.length) ? null : res.filePaths[0];
+  },
+  // Resolves to the file's text, or null if the picker was cancelled.
+  pickImportText: async () => {
     const res = await dialog.showOpenDialog(mainWindow, {
       title: uiText('import_master'),
       properties: ['openFile'],
       filters: [{ name: 'JSON', extensions: ['json'] }]
     });
-    if (res.canceled || !res.filePaths.length) return ok(null);
+    if (res.canceled || !res.filePaths.length) return null;
+    return fs.readFileSync(res.filePaths[0], 'utf8');
+  },
+  openPath: (p) => shell.showItemInFolder(p),
+  appInfo: () => ({ version: app.getVersion(), platform: process.platform, dataDir: paths.base() }),
+  // TEST-ONLY diagnostic (env-gated): log what the renderer is actually asking
+  // to persist, so an E2E run can prove the in-memory edits reach the drive.
+  onDriveWrite: (patient) => {
+    if (!process.env.GDR_SMOKE_LAUNCH) return;
     try {
-      const text = fs.readFileSync(res.filePaths[0], 'utf8');
-      return ok(db.importMaster(text));
-    } catch (e) { return fail('import_failed', String(e.message || e)); }
-  });
+      const vs = (patient && patient.visits) || [];
+      const lv = vs[vs.length - 1] || {};
+      console.log('[smoke] IPC drive:write last-visit items=' + ((lv.treatment_items || []).length) + ' exam=' + lv.exam_type + ' dentist=' + (lv.station_status && lv.station_status.dentist));
+    } catch (_) {}
+  },
+  updater: {
+    available: () => updaterAvailable(),
+    state: () => updateState,
+    check: () => {
+      if (!updaterAvailable()) return api.fail('updates_unavailable');
+      const u = getUpdater();
+      if (!u) return api.fail('updates_unavailable');
+      pushUpdateStatus({ status: 'checking', error: null });
+      u.checkForUpdates().catch((err) => pushUpdateStatus({ status: 'error', error: String(err && err.message || err) }));
+      return api.ok(true);
+    },
+    install: () => {
+      if (!updaterAvailable() || !autoUpdater) return api.fail('updates_unavailable');
+      updateLog('INFO', 'user requested install & restart');
+      // isSilent=false (show the NSIS step), isForceRunAfter=true (relaunch the app).
+      setImmediate(() => { try { autoUpdater.quitAndInstall(false, true); } catch (e) { updateLog('ERROR', 'quitAndInstall ' + e); } });
+      return api.ok(true);
+    },
+    // Open the GitHub Releases page (used by the portable build, which can't self-update).
+    openReleases: () => {
+      try { shell.openExternal(RELEASES_URL); return api.ok(true); } catch (e) { return api.fail('open_failed', String(e.message || e)); }
+    }
+  }
+};
 
-  // --- Shell helpers ---
-  ipcMain.handle('shell:openPath', (_e, p) => { shell.showItemInFolder(p); return ok(true); });
-  ipcMain.handle('shell:exportsDir', () => ok(paths.exports()));
-  ipcMain.handle('app:info', () => ok({ version: app.getVersion(), platform: process.platform, dataDir: paths.base() }));
+function registerIpc() {
+  const handlers = api.createHandlers(desktopPlatform);
+  for (const [channel, fn] of Object.entries(handlers)) {
+    ipcMain.handle(channel, (_e, payload) => fn(payload, ipcCtx));
+  }
+  // Synchronous channel: the preload reads this during page load so the renderer
+  // can pick its UI language before any module evaluates (no flash, no async).
+  ipcMain.on('config:get-sync', (e) => { e.returnValue = api.publicConfig(); });
 }

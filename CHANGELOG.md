@@ -4,6 +4,23 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## Unreleased
+- **Web test copy (Render).** The same application can now run in a web browser
+  for remote/agile testing, redeployed automatically on every push. See
+  docs/RENDER.md. The screens and the logic are not rewritten: the browser runs the
+  identical screens, and the request handlers were moved into one module
+  (src/main/api.js) used by BOTH the desktop app and the web server, so the two
+  cannot drift. Virtual drives stand in for USB sticks; exports download in the
+  browser; each browser has its own login, so testers at different stations don't
+  collide. Locked behind a site password, with test-data-only banners.
+- **Release safety:** a Windows release is now published only when the version
+  number is new. Previously any push re-published over the current version's
+  installer, so routine test pushes could have replaced what clinics download.
+- Desktop app: internal refactor only (handlers moved to src/main/api.js) — no
+  visible change. Verified unchanged by the full real-app suite (e2e 36/36).
+- Quality: new `npm run web-test` (24 checks: desktop/web interface parity,
+  server security, and a full clinic visit in a real browser).
+
 ## v1.3.6 — 2026-11-07
 - **Fixed: the brand font now actually loads.** Since v1.1.4 the stylesheet pointed
   at a font folder that doesn't exist, so every install has been showing a fallback
