@@ -201,6 +201,12 @@ seed([], 'fresh check-in');
   const fontLine = find(lines, /body font/);
   const lockupLine = find(lines, /login lockup img natural width/);
   record('6a', 'v1.1.4 body font includes "Source Sans 3"', /Source Sans 3/.test(fontLine), fontLine.replace('[smoke] ', '').trim());
+  // 6a only proves the CSS NAMES the font. 6d proves the files actually load —
+  // a wrong @font-face path left every install on a fallback font until v1.3.6.
+  let faces = [];
+  try { faces = JSON.parse(find(lines, /brand font faces:/).replace(/^.*faces:\s*/, '')); } catch (_) { faces = []; }
+  record('6d', 'v1.3.6 brand font files actually load (400/600/700 all "loaded")',
+    faces.length === 3 && faces.every((f) => /:loaded$/.test(f)), `faces=${JSON.stringify(faces)}`);
   record('6b', 'v1.1.4 login lockup image naturalWidth > 0', num(lockupLine) > 0, lockupLine.replace('[smoke] ', '').trim());
   // header brand-logo presence is checked separately below (admin launch shows header)
   // v1.3.2 item 1 — the dentition-layout dropdown was REMOVED. The chart always

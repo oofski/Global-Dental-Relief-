@@ -52,6 +52,15 @@ function createWindow() {
       setTimeout(async () => {
         try {
           const bodyFont = await mainWindow.webContents.executeJavaScript("getComputedStyle(document.body).fontFamily");
+          // The computed font-family names Source Sans 3 whether or not the file
+          // loads, so it cannot catch a broken @font-face path. Force each brand
+          // weight to load and report each face's real status instead.
+          const brandFaces = await mainWindow.webContents.executeJavaScript(`(async function(){
+            for (const wgt of ['400','600','700']) { try { await document.fonts.load(wgt + ' 16px "Source Sans 3"'); } catch (_) {} }
+            return [...document.fonts].filter(function(f){ return /Source Sans 3/.test(f.family); })
+              .map(function(f){ return f.weight + ':' + f.status; }).sort();
+          })()`);
+          console.log('[smoke] brand font faces:', JSON.stringify(brandFaces));
           const lockup = await mainWindow.webContents.executeJavaScript("(document.querySelector('.login-lockup')||{}).naturalWidth||0");
           console.log('[smoke] body font:', JSON.stringify(bodyFont));
           console.log('[smoke] login lockup img natural width:', lockup);

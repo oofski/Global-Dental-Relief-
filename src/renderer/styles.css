@@ -4,9 +4,9 @@
    (sky blue + purple + orange + gold), Myriad-substitute UI type (Source Sans 3),
    Georgia for reports. Crisp edges, defined borders, large touch targets.
    ========================================================================== */
-@font-face{font-family:'Source Sans 3';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/SourceSans3-400.woff2') format('woff2');}
-@font-face{font-family:'Source Sans 3';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/SourceSans3-600.woff2') format('woff2');}
-@font-face{font-family:'Source Sans 3';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/SourceSans3-700.woff2') format('woff2');}
+@font-face{font-family:'Source Sans 3';font-style:normal;font-weight:400;font-display:swap;src:url('../../assets/fonts/SourceSans3-400.woff2') format('woff2');}
+@font-face{font-family:'Source Sans 3';font-style:normal;font-weight:600;font-display:swap;src:url('../../assets/fonts/SourceSans3-600.woff2') format('woff2');}
+@font-face{font-family:'Source Sans 3';font-style:normal;font-weight:700;font-display:swap;src:url('../../assets/fonts/SourceSans3-700.woff2') format('woff2');}
 :root{
   /* GDR brand blue ramp (Dental blue #64AFE1 / Light blue #83D4F1) */
   --navy:#0f2c3b; --blue-900:#123a50; --blue-800:#185d80; --blue-700:#1c6f97;

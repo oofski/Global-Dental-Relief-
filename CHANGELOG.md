@@ -4,6 +4,17 @@ All notable changes to GDR Clinic are listed here. The matching version's notes
 are published automatically to each GitHub Release (and read by the in-app
 auto-updater).
 
+## v1.3.6 — 2026-11-07
+- **Fixed: the brand font now actually loads.** Since v1.1.4 the stylesheet pointed
+  at a font folder that doesn't exist, so every install has been showing a fallback
+  system font (Segoe UI on Windows) instead of the brand's Source Sans 3. The app now
+  renders in the intended typeface on every screen.
+- Quality: the old test only checked that the stylesheet *named* the font, which
+  passes whether or not the file loads. New real-app check 6d forces each weight to
+  load and requires all three to report "loaded" (it fails on the old path: all
+  three "error"). e2e 36/36.
+- Product screenshots in docs/screenshots re-captured in the correct font.
+
 ## v1.3.5 — 2026-11-07
 - **Fixed: collapsed side panels no longer stretch into a tall empty card.** On the
   dentist, hygienist and fluoride screens, a collapsed panel (e.g. Medical history)
